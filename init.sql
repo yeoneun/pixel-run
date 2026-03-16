@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS scores (
+  id SERIAL PRIMARY KEY,
+  player_name VARCHAR(50) NOT NULL DEFAULT 'anonymous',
+  score INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);

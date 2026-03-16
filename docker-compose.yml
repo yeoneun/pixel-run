@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16.11
+    container_name: dino-postgres
+    environment:
+      POSTGRES_DB: dino
+      POSTGRES_USER: dino
+      POSTGRES_PASSWORD: dino1234
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

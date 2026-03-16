@@ -8,28 +8,129 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     background: #f7f7f7;
-    overflow: hidden;
     touch-action: none;
     -webkit-user-select: none;
     user-select: none;
+    font-family: monospace;
   }
   canvas {
     display: block;
     max-width: 100vw;
-    max-height: 100vh;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+  }
+  #ranking {
+    margin-top: 16px;
+    background: #fff;
+    border: 2px solid #535353;
+    padding: 12px 20px;
+    width: 360px;
+    max-width: 95vw;
+  }
+  #ranking h3 {
+    text-align: center;
+    margin-bottom: 8px;
+    color: #535353;
+    font-size: 14px;
+  }
+  #ranking table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    color: #535353;
+  }
+  #ranking th, #ranking td {
+    padding: 4px 8px;
+    text-align: left;
+  }
+  #ranking th {
+    border-bottom: 1px solid #ccc;
+  }
+  #ranking td.score-col {
+    text-align: right;
+    font-weight: bold;
+  }
+  #ranking .empty-msg {
+    text-align: center;
+    color: #999;
+    padding: 8px;
+    font-size: 11px;
+  }
+  #player-input {
+    margin-bottom: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: #535353;
+  }
+  #player-input input {
+    font-family: monospace;
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid #999;
+    width: 150px;
+    text-align: center;
   }
 </style>
 </head>
 <body>
+<div id="player-input">
+  <label>Player: <input id="playerName" type="text" value="anonymous" maxlength="50" /></label>
+</div>
 <canvas id="game"></canvas>
+<div id="ranking">
+  <h3>RANKING TOP 10</h3>
+  <div id="ranking-body"><p class="empty-msg">Loading...</p></div>
+</div>
 <script>
 'use strict';
+
+// ── API ──
+const API_URL = 'http://localhost:3000';
+
+async function saveScore(playerName, score) {
+  try {
+    await fetch(`${API_URL}/scores`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_name: playerName, score }),
+    });
+  } catch (e) {
+    console.warn('Failed to save score:', e);
+  }
+}
+
+async function loadRanking() {
+  const body = document.getElementById('ranking-body');
+  try {
+    const res = await fetch(`${API_URL}/scores`);
+    const data = await res.json();
+    if (!data.length) {
+      body.innerHTML = '<p class="empty-msg">No records yet</p>';
+      return;
+    }
+    let html = '<table><tr><th>#</th><th>Player</th><th>Score</th></tr>';
+    data.forEach((row, i) => {
+      html += `<tr><td>${i + 1}</td><td>${escapeHtml(row.player_name)}</td><td class="score-col">${row.score}</td></tr>`;
+    });
+    html += '</table>';
+    body.innerHTML = html;
+  } catch (e) {
+    body.innerHTML = '<p class="empty-msg">Server offline</p>';
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+loadRanking();
 
 // ── Constants ──
 const CANVAS_WIDTH = 600;
@@ -664,6 +765,10 @@ class Game {
     this.state = 'gameover';
     this.score.save();
     this.gameOverDelay = 20; // Prevent instant restart
+
+    const playerName = document.getElementById('playerName').value.trim() || 'anonymous';
+    const finalScore = Math.floor(this.score.value);
+    saveScore(playerName, finalScore).then(() => loadRanking());
   }
 
   draw() {
