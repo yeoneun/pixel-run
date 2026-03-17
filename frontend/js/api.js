@@ -1,6 +1,6 @@
 import { escapeHtml } from './utils.js';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'http://localhost:3001';
 
 export async function saveScore(playerName, score) {
   try {
