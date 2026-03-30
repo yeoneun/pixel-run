@@ -20,4 +20,28 @@ export class ScoresService {
     );
     return result.rows;
   }
+
+  async findOne(id: number) {
+    const result = await this.pool.query(
+      'SELECT * FROM scores WHERE id = $1',
+      [id],
+    );
+    return result.rows[0] || null;
+  }
+
+  async update(id: number, playerName: string, score: number) {
+    const result = await this.pool.query(
+      'UPDATE scores SET player_name = $1, score = $2 WHERE id = $3 RETURNING *',
+      [playerName, score, id],
+    );
+    return result.rows[0] || null;
+  }
+
+  async remove(id: number) {
+    const result = await this.pool.query(
+      'DELETE FROM scores WHERE id = $1 RETURNING *',
+      [id],
+    );
+    return result.rows[0] || null;
+  }
 }

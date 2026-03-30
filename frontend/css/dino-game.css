@@ -68,3 +68,20 @@ canvas {
   width: 150px;
   text-align: center;
 }
+#ranking .action-col {
+  text-align: right;
+  white-space: nowrap;
+}
+#ranking .btn-edit,
+#ranking .btn-delete {
+  background: none;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 6px;
+  margin-left: 2px;
+  color: #535353;
+  border-radius: 3px;
+}
+#ranking .btn-edit:hover { background: #e8e8e8; }
+#ranking .btn-delete:hover { background: #ffdddd; color: #c00; border-color: #c00; }

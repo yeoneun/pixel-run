@@ -14,23 +14,71 @@ export async function saveScore(playerName, score) {
   }
 }
 
+export async function updateScore(id, playerName, score) {
+  try {
+    const res = await fetch(`${API_URL}/scores/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_name: playerName, score }),
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('Failed to update score:', e);
+  }
+}
+
+export async function deleteScore(id) {
+  try {
+    await fetch(`${API_URL}/scores/${id}`, { method: 'DELETE' });
+  } catch (e) {
+    console.warn('Failed to delete score:', e);
+  }
+}
+
 export async function loadRanking() {
-  const body = document.getElementById('ranking-body');
+  const container = document.getElementById('ranking-body');
   try {
     const res = await fetch(`${API_URL}/scores`);
     const data = await res.json();
     if (!data.length) {
-      body.innerHTML = '<p class="empty-msg">No records yet</p>';
+      container.innerHTML = '<p class="empty-msg">No records yet</p>';
       return;
     }
-    let html = '<table><tr><th>#</th><th>Player</th><th>Score</th></tr>';
+    let html = '<table><tr><th>#</th><th>Player</th><th>Score</th><th></th></tr>';
     data.forEach((row, i) => {
-      html += `<tr><td>${i + 1}</td><td>${escapeHtml(row.player_name)}</td><td class="score-col">${row.score}</td></tr>`;
+      html += `<tr>
+        <td>${i + 1}</td>
+        <td>${escapeHtml(row.player_name)}</td>
+        <td class="score-col">${row.score}</td>
+        <td class="action-col">
+          <button class="btn-edit" data-id="${row.id}" data-name="${escapeHtml(row.player_name)}" data-score="${row.score}">✎</button>
+          <button class="btn-delete" data-id="${row.id}">✕</button>
+        </td>
+      </tr>`;
     });
     html += '</table>';
-    body.innerHTML = html;
+    container.innerHTML = html;
+
+    container.querySelectorAll('.btn-delete').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('정말 삭제하시겠습니까?')) return;
+        await deleteScore(btn.dataset.id);
+        loadRanking();
+      });
+    });
+
+    container.querySelectorAll('.btn-edit').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const newName = prompt('이름:', btn.dataset.name);
+        if (newName === null) return;
+        const newScore = prompt('점수:', btn.dataset.score);
+        if (newScore === null) return;
+        await updateScore(btn.dataset.id, newName, Number(newScore));
+        loadRanking();
+      });
+    });
   } catch (e) {
-    body.innerHTML = '<p class="empty-msg">Server offline</p>';
+    container.innerHTML = '<p class="empty-msg">Server offline</p>';
   }
 }
 
