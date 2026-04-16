@@ -1,27 +1,32 @@
 # Promo Dino Game PRD
 
 > 작성일: 2026-03-30
+> 최종 수정: 2026-04-16 (클라이언트 기획 변경 반영)
 > 대상 파일: `frontend/`, `backend/` (수정), 어드민 페이지 (신규), 인프라 설정 (신규)
-> Figma: 없음
+> Figma: https://www.figma.com/design/gsANyIQ6n0utFXjlexeXq5/Untitled?node-id=23-407
 
 ---
 
 ## 1. 개요 / 현황 분석
 
-온라인 스토어 프로모션용 크롬 다이노 게임. 커스텀 캐릭터(쥐)로 교체 가능하고, 유저별 점수를 저장하여 상위 N명 랭킹을 관리한다. iframe으로 삽입되므로 완전히 독립적으로 동작해야 한다.
+온라인 스토어 프로모션용 크롬 다이노 게임. 커스텀 캐릭터(쥐)로 교체 가능하고, 일정 점수 도달 시 해피엔딩 연출이 재생된다. iframe으로 삽입되므로 완전히 독립적으로 동작해야 한다.
 
 | 항목 | 현재 | 필요 |
 | ---- | ---- | ---- |
-| 캐릭터 | 픽셀아트 하드코딩 (`sprites.js`) | 이미지 파일 교체 가능한 스프라이트 시스템 |
-| 장애물 | 선인장/익룡 픽셀아트 하드코딩 | 이미지 파일 교체 가능 |
-| 인트로 화면 | 없음 (바로 idle 상태) | 타이틀 + preload 후 시작 |
-| 점수 저장 | PostgreSQL + NestJS (localhost) | 프로덕션 배포, 상위 N개만 보관, 중복 방지 |
+| 캐릭터 | 픽셀아트 하드코딩 (`sprites.js`) | 이미지 파일 교체 가능한 스프라이트 시스템 (어드민 업로드) |
+| 장애물 | 선인장/익룡 픽셀아트 하드코딩 3종+비행1종 | 이미지 파일 교체 가능, 5종+비행1종 |
+| 인트로 화면 | 없음 (바로 idle 상태) | 타이틀 "Run Dude Run!" + preload 후 시작 |
+| 게임 종료 | 장애물 충돌 시 게임오버만 존재 | 게임오버 + 해피엔딩 시나리오 |
+| 점수 | 1점 단위 증가 | 50점 단위 증가 |
+| 게임오버 UI | 다시하기/순위작성 버튼 | 사망 애니메이션 + 다시하기 아이콘(↻)만 |
 | 랭킹 UI | 게임 화면에 랭킹 + edit/delete 노출 | 유저에게 미노출, 어드민 페이지 별도 |
 | 유저 정보 | player_name만 저장 | 이름 + 연락처 + userAgent + IP 저장 |
 | API URL | `http://localhost:3001` 하드코딩 | 환경별 설정 가능 |
 | 배포 | GitHub Pages (프론트만) | 프론트 + 백엔드 모두 프로덕션 배포 |
 | iframe | 미지원 | iframe 삽입 최적화 |
-| 반응형 | canvas CSS 스케일링만 | 유지 (크롬 다이노 원본 방식 따름) |
+| 화면 크기 | canvas 600x150 고정 | 모바일 375x208, PC 1920px 폭 |
+| 폰트 | 미지정 | EXEPixelPerfect (픽셀 폰트) |
+| 점프 입력 | 캔버스 영역만 | 페이지 전체 영역 |
 
 ---
 
@@ -33,8 +38,7 @@
 ┌─────────────────────────────────────────────────┐
 │                                                 │
 │                                                 │
-│             Hellodude                           │
-│           Running Mouse                         │
+│             Run Dude Run!                       │
 │                                                 │
 │                                                 │
 │  ─────────────────────────────────────────────── │
@@ -46,8 +50,7 @@
 ┌─────────────────────────────────────────────────┐
 │                                                 │
 │                                                 │
-│             Hellodude                           │
-│           Running Mouse                         │
+│             Run Dude Run!                       │
 │                                                 │
 │         PRESS SPACE TO START                    │
 │  ─────────────────────────────────────────────── │
@@ -59,15 +62,15 @@
 ┌─────────────────────────────────────────────────┐
 │                                                 │
 │                    ↓ (타이틀 아래로 떨어짐)       │
-│             Hellodude                           │
-│           Running Mouse                         │
+│             Run Dude Run!                       │
+│                                                 │
 │  🐭→                                            │  ← 쥐가 좌측에서 달려나옴
 │  ─────────────────────────────────────────────── │
 │                                                 │
 └─────────────────────────────────────────────────┘
 ```
 
-- 타이틀 "Hellodude" / "Running Mouse"를 canvas 중앙에 표시
+- 타이틀 "Run Dude Run!"을 canvas 중앙에 표시
 - SpriteLoader가 모든 이미지 preload 완료 → "PRESS SPACE TO START" 텍스트 표시 + 입력 리스닝 시작
 - Space/Tap → 타이틀이 아래로 떨어지는 애니메이션 + 캐릭터(쥐)가 좌측에서 달려나오며 게임 시작
 
@@ -75,96 +78,121 @@
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  HI 00350    00127                              │  ← 점수 (우상단)
+│  HI 00350    00650                              │  ← 점수 (우상단, 50점 단위)
 │                                                 │
 │                                                 │
 │                                                 │
-│        🐭          🌵       🌵🌵    🦅          │  ← 캐릭터 + 장애물
+│        🐭          🌵       🌵🌵    🦅          │  ← 캐릭터 + 장애물 (5종+비행1종)
 │  ─────────────────────────────────────────────── │  ← 지면
 │                                                 │
 └─────────────────────────────────────────────────┘
 ```
 
 - 랭킹, 이름 입력란 없음 — 게임 화면은 canvas만
-- 반응형: canvas 내부 해상도(600x150) 고정, CSS로 뷰포트에 맞춰 스케일링
+- 점수는 50점 단위로 증가
+- 점프 입력: 페이지 전체 영역 클릭/탭 시 점프
+- 반응형: 모바일 375x208, PC 1920px 폭 기준 스케일링
 
 ### 2.2 Game Over 상태
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  HI 00350    00127                              │
+│  HI 00350    00650                              │
 │                                                 │
-│            G A M E  O V E R                     │
+│              Game Over                          │
 │                                                 │
-│        🐭          🌵                           │
+│                                                 │
 │  ─────────────────────────────────────────────── │
 │                                                 │
-│         [다시하기]    [순위작성]                   │  ← canvas 아래 HTML 버튼
-│                                                 │
-└─────────────────────────────────────────────────┘
-
-        ↓ '순위작성' 클릭 시
-
-┌─────────────────────────────────────────────────┐
-│  HI 00350    00127                              │
-│                                                 │
-│            G A M E  O V E R                     │
-│                                                 │
-│        🐭          🌵                           │
-│  ─────────────────────────────────────────────── │
-│                                                 │
-│   이름:    [____________]                        │  ← input
-│   연락처:  [____________]                        │  ← input
-│   점수:    127                                   │  ← 자동 표시 (읽기 전용)
-│                                                 │
-│         [제출]      [취소]                        │
+│                  ↻                               │  ← 다시하기 아이콘
 │                                                 │
 └─────────────────────────────────────────────────┘
 ```
 
-- '다시하기' → 게임 즉시 restart
-- '순위작성' → 이름/연락처 입력 폼 표시
-- '제출' → `POST /scores` (이름, 연락처, 점수 + 서버에서 userAgent, IP 자동 저장)
-- '취소' → 입력 폼 닫기, 다시하기/순위작성 버튼 복귀
+**사망 애니메이션**:
+1. 장애물 충돌 → 쥐 멈춤 + 죽은 쥐 스프라이트 적용
+2. 쥐와 장애물이 함께 공중에 뜸
+3. 아래로 떨어지며 사라짐
+4. "Game Over" 표시 + ↻ 아이콘
 
-### 2.3 모바일 레이아웃
+- ↻ 클릭 → "Game Over" 사라짐 + 쥐 왼쪽에서 재등장 → 게임 restart
+
+### 2.3 해피엔딩 화면
+
+```
+┌─────────────────────────────────────────────────┐
+│                               10000              │
+│                                                 │
+│            Love wins all                        │
+│                                                 │
+│                     🐭♥🐭(흰)                    │  ← 둘 다 눈이 하트
+│  ─────────────────────────────────────────────── │
+│                                                 │
+│                  ↻                               │  ← 다시하기 아이콘
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+
+**해피엔딩 흐름**:
+1. 트리거 점수 도달 → 장애물 등장 중단
+2. 여친 쥐(흰색) 화면 오른쪽에 대기
+3. 주인공이 오른쪽으로 달려감 (기존 제자리 달리기와 다름)
+4. 여친 쥐에 도달 → 두 쥐 눈이 하트
+5. "Love wins all" + ↻ 아이콘
+
+- ↻ 클릭 → 텍스트 사라짐 + 오른쪽 캐릭터들 퇴장 + 쥐 왼쪽에서 재등장 → 게임 restart
+
+### 2.4 모바일 레이아웃
 
 ```
 ┌──────────────────────┐
-│   HI 00350   00127   │
+│   HI 00350   00650    │
 │                      │
 │    🐭     🌵   🦅   │
 │  ──────────────────  │
 │                      │
-│  [다시하기] [순위작성] │
+│         ↻            │
 │                      │
 └──────────────────────┘
 ```
 
-동일 구조. canvas CSS 스케일링 + 버튼/입력 영역 `max-width: 95vw`.
+동일 구조. canvas CSS 스케일링 + 모바일 375x208 기준.
 
 ---
 
 ## 3. 상태 머신
 
 ```
-┌────────┐  preload 완료  ┌────────┐  Space/Tap  ┌──────────┐  충돌  ┌───────────┐
-│loading │──────────────▶│  intro │────────────▶│ playing  │──────▶│ gameover  │
-└────────┘               └────────┘             └──────────┘       └───────────┘
-                                                     ▲                    │
-                                                     │  '다시하기' 클릭    │
-                                                     └────────────────────┘
-                                                     ▲                    │
-                                                     │  '순위작성' → 제출/취소 후 '다시하기'
-                                                     └────────────────────┘
+┌────────┐  preload 완료  ┌────────┐  Space/Tap  ┌──────────┐
+│loading │──────────────▶│  intro │────────────▶│ playing  │
+└────────┘               └────────┘             └──────────┘
+                                                     │
+                                          ┌──────────┴──────────┐
+                                          │                     │
+                                       충돌                  클리어
+                                          │                     │
+                                          ▼                     ▼
+                                   ┌───────────┐        ┌────────────┐
+                                   │ gameover  │        │happyending │
+                                   └───────────┘        └────────────┘
+                                          │                     │
+                                          │  ↻ 클릭             │  ↻ 클릭
+                                          │                     │
+                                          └──────────┬──────────┘
+                                                     │
+                                                     ▼
+                                               ┌──────────┐
+                                               │ playing  │
+                                               └──────────┘
 ```
 
 - `loading`: 페이지 로드 → SpriteLoader가 이미지 preload 중. 타이틀만 표시.
 - `intro`: preload 완료 → "PRESS SPACE TO START" 표시, 입력 리스닝
 - `playing`: Space/Tap → 타이틀 떨어지는 연출 + 캐릭터 등장 → 게임 루프
-- `gameover`: 충돌 → GAME OVER + '다시하기'/'순위작성' 버튼 표시
-  - '다시하기' → `playing`
-  - '순위작성' → 입력 폼 → 제출/취소 → 버튼 복귀 (여전히 `gameover`)
+- `gameover`: 충돌 → 사망 애니메이션 → "Game Over" + ↻ 아이콘
+  - ↻ 클릭 → `playing`
+- `happyending`: 트리거 점수 도달 → 여친 쥐 등장 → 만남 → "Love wins all" + ↻ 아이콘
+  - ↻ 클릭 → `playing`
 
 ---
 
@@ -174,7 +202,7 @@
 
 **현재**: `sprites.js`에 픽셀 좌표 배열로 하드코딩. `drawPixels()`로 1색 렌더링.
 
-**변경**: 이미지 파일 기반 스프라이트 시스템으로 전환. 기존 픽셀아트는 fallback으로 유지.
+**변경**: 이미지 파일 기반 스프라이트 시스템으로 전환. 기존 픽셀아트는 제거. 이미지는 서버에서 동적으로 로드하며, 어드민에서 업로드하여 교체.
 
 **이미지 포맷**: WebP 권장 (PNG 대비 30~50% 용량 절감, 모든 모던 브라우저 지원). PNG도 허용 (fallback 호환성).
 
@@ -188,40 +216,19 @@
 | 캐릭터 숙이기 | dino-duck-1.webp, dino-duck-2.webp | 118 x 60 | 2프레임 루프, 넓고 낮게 |
 | 캐릭터 점프 | dino-jump-1.webp, dino-jump-2.webp | 88 x 96 | 2프레임 루프 |
 | 캐릭터 사망 | dino-dead-1.webp, dino-dead-2.webp | 88 x 96 | 2프레임 루프 |
-| 장애물 소 | obstacle-sm-1.webp, obstacle-sm-2.webp | 34 x 70 | 지면 장애물, 2프레임 루프 |
-| 장애물 대 | obstacle-lg-1.webp, obstacle-lg-2.webp | 50 x 96 | 지면 장애물, 2프레임 루프 |
-| 장애물 더블 | obstacle-db-1.webp, obstacle-db-2.webp | 80 x 96 | 지면 장애물, 2프레임 루프 |
+| 해피엔딩 쥐 | dino-happy-1.webp, dino-happy-2.webp | 추후 확정 | 눈이 하트 |
+| 여친 쥐 (대기) | girlfriend-idle-1.webp, girlfriend-idle-2.webp | 추후 확정 | 해피엔딩 시 등장 |
+| 해피엔딩 여친 쥐 | girlfriend-happy-1.webp, girlfriend-happy-2.webp | 추후 확정 | 눈이 하트 |
+| 장애물 1 | obstacle-1-1.webp, obstacle-1-2.webp | 추후 확정 | 지면 장애물 |
+| 장애물 2 | obstacle-2-1.webp, obstacle-2-2.webp | 추후 확정 | 지면 장애물 |
+| 장애물 3 | obstacle-3-1.webp, obstacle-3-2.webp | 추후 확정 | 지면 장애물 |
+| 장애물 4 | obstacle-4-1.webp, obstacle-4-2.webp | 추후 확정 | 지면 장애물 |
+| 장애물 5 | obstacle-5-1.webp, obstacle-5-2.webp | 추후 확정 | 지면 장애물 |
 | 날아다니는 장애물 | obstacle-fly-1.webp, obstacle-fly-2.webp | 84 x 60 | 공중 장애물, 2프레임 루프 |
 | 지면 타일 | ground.webp | 2400 x 24 | 가로로 반복 스크롤 |
 
-> 크기는 canvas 기준 (600x150). 실제 렌더링 시 scale 적용.
+> 크기는 canvas 기준. 실제 렌더링 시 scale 적용.
 > 초기 구현 시 이미지 리소스 없이 컬러 박스+라벨 placeholder로 동작해야 함. sprites.js fallback 제거.
-
-**파일 구조**:
-
-```
-frontend/
-  assets/
-    sprites/
-      sprite-config.json
-      dino-run-1.webp
-      dino-run-2.webp
-      dino-duck-1.webp
-      dino-duck-2.webp
-      dino-jump-1.webp
-      dino-jump-2.webp
-      dino-dead-1.webp
-      dino-dead-2.webp
-      obstacle-sm-1.webp
-      obstacle-sm-2.webp
-      obstacle-lg-1.webp
-      obstacle-lg-2.webp
-      obstacle-db-1.webp
-      obstacle-db-2.webp
-      obstacle-fly-1.webp
-      obstacle-fly-2.webp
-      ground.webp
-```
 
 **`sprite-config.json` 예시**:
 
@@ -233,30 +240,23 @@ frontend/
     "duck": ["dino-duck-1.webp", "dino-duck-2.webp"],
     "jump": ["dino-jump-1.webp", "dino-jump-2.webp"],
     "dead": ["dino-dead-1.webp", "dino-dead-2.webp"],
+    "happyEnding": ["dino-happy-1.webp", "dino-happy-2.webp"],
     "size": { "w": 88, "h": 96 },
     "duckSize": { "w": 118, "h": 60 },
     "hitbox": { "x": 4, "y": 0, "w": 80, "h": 96 },
     "duckHitbox": { "x": 4, "y": 8, "w": 110, "h": 52 }
   },
+  "girlfriend": {
+    "idle": ["girlfriend-idle-1.webp", "girlfriend-idle-2.webp"],
+    "happyEnding": ["girlfriend-happy-1.webp", "girlfriend-happy-2.webp"],
+    "size": { "w": 88, "h": 96 }
+  },
   "obstacles": [
-    {
-      "type": "small",
-      "sprites": ["obstacle-sm-1.webp", "obstacle-sm-2.webp"],
-      "size": { "w": 34, "h": 70 },
-      "hitbox": { "x": 2, "y": 0, "w": 30, "h": 70 }
-    },
-    {
-      "type": "large",
-      "sprites": ["obstacle-lg-1.webp", "obstacle-lg-2.webp"],
-      "size": { "w": 50, "h": 96 },
-      "hitbox": { "x": 2, "y": 0, "w": 46, "h": 96 }
-    },
-    {
-      "type": "double",
-      "sprites": ["obstacle-db-1.webp", "obstacle-db-2.webp"],
-      "size": { "w": 80, "h": 96 },
-      "hitbox": { "x": 2, "y": 0, "w": 76, "h": 96 }
-    }
+    { "type": "obstacle-1", "sprites": ["obstacle-1-1.webp", "obstacle-1-2.webp"], "size": { "w": 34, "h": 70 }, "hitbox": { "x": 2, "y": 0, "w": 30, "h": 70 } },
+    { "type": "obstacle-2", "sprites": ["obstacle-2-1.webp", "obstacle-2-2.webp"], "size": { "w": 50, "h": 96 }, "hitbox": { "x": 2, "y": 0, "w": 46, "h": 96 } },
+    { "type": "obstacle-3", "sprites": ["obstacle-3-1.webp", "obstacle-3-2.webp"], "size": { "w": 80, "h": 96 }, "hitbox": { "x": 2, "y": 0, "w": 76, "h": 96 } },
+    { "type": "obstacle-4", "sprites": ["obstacle-4-1.webp", "obstacle-4-2.webp"], "size": { "w": 50, "h": 96 }, "hitbox": { "x": 2, "y": 0, "w": 46, "h": 96 } },
+    { "type": "obstacle-5", "sprites": ["obstacle-5-1.webp", "obstacle-5-2.webp"], "size": { "w": 50, "h": 96 }, "hitbox": { "x": 2, "y": 0, "w": 46, "h": 96 } }
   ],
   "flyingObstacles": [
     {
@@ -273,87 +273,70 @@ frontend/
 }
 ```
 
-**이미지 교체 방법**: `assets/sprites/` 폴더의 이미지 파일만 교체 + `sprite-config.json`에서 hitbox/size 조정.
+> 장애물 4, 5의 size/hitbox는 실제 이미지 리소스 수령 후 확정 필요.
+
+**이미지 교체 방법**: 어드민 페이지에서 이미지 업로드 → 서버에 저장 → 즉시 반영 (프론트엔드 재배포 불필요).
 
 **placeholder (초기 구현)**: 실제 이미지 리소스가 준비되기 전까지, `sprite-config.json`의 size 정보를 기반으로 **해당 크기의 컬러 박스 + 라벨 텍스트**로 임시 렌더링. 기존 `sprites.js` 픽셀아트 fallback은 **제거**한다.
 
-```
-예시: 88x96 크기의 반투명 초록 박스 + "dino-run" 라벨
-┌──────────┐
-│ dino-run │  ← 컬러 박스 placeholder
-└──────────┘
-```
+**preload 전략**: 인트로(loading) 화면에서 서버로부터 모든 스프라이트 이미지를 프리로드. 이미지가 없거나 로드 실패 시 해당 아이템은 컬러 박스 placeholder로 렌더링. 모든 로드 시도 완료 후 `intro` 상태로 전환하여 "PRESS SPACE TO START" 표시.
 
-**preload 전략**: 인트로(loading) 화면에서 `sprite-config.json` → 모든 이미지를 `new Image()` + `Promise.all`로 프리로드. 이미지 파일이 없거나 로드 실패 시 해당 아이템은 컬러 박스 placeholder로 렌더링. 모든 로드 시도 완료 후 `intro` 상태로 전환하여 "PRESS SPACE TO START" 표시.
+### 4.2 점수 시스템
 
-### 4.2 점수 시스템 개선
+- **점수 증가**: 50점 단위 (기존 1점 단위에서 변경)
+- **속도 증가**: 크롬 다이노 게임의 속도 증가 패턴을 그대로 적용
+- **해피엔딩 트리거**: 일정 점수 도달 시 해피엔딩 진입. 트리거 점수는 어드민에서 변경 가능.
 
-**DB 스키마 변경**:
+**DB 스키마**:
 
 ```sql
 CREATE TABLE IF NOT EXISTS scores (
   id SERIAL PRIMARY KEY,
   player_name VARCHAR(50) NOT NULL,
-  contact VARCHAR(100) NOT NULL,       -- 연락처 (전화번호 등)
+  contact VARCHAR(100) NOT NULL,
   score INTEGER NOT NULL,
-  user_agent TEXT,                      -- 자동 저장
-  ip_address VARCHAR(45),              -- 자동 저장 (IPv6 대응)
+  user_agent TEXT,
+  ip_address VARCHAR(45),
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- contact를 유저 고유 식별자로 사용
 CREATE UNIQUE INDEX IF NOT EXISTS idx_scores_unique_contact
   ON scores (contact);
 ```
 
-**중복 방지 정책**: `contact`를 유저의 고유 식별자(Unique ID)로 사용. 동일 contact의 유저는 **최고 점수만 유지**.
-
-**유저 정보 세션 저장**: 유저가 한 번 이름/연락처를 입력하면 `sessionStorage`에 저장. 이후 게임오버 시 '순위작성' 클릭하면 이전 입력값이 자동으로 채워짐. 유저는 수정 가능.
-
-**contact validation (서버 + 클라이언트 양측)**:
-- 전화번호 형식: `010-XXXX-XXXX` (하이픈 포함, 정규식 검증)
-- 클라이언트: 입력 시 실시간 포맷팅 + 제출 전 검증
-- 서버: 동일 정규식으로 재검증, 불일치 시 400 에러
-- 저장 시 하이픈 제거하여 정규화 (`01012345678`) → DB에는 숫자만 저장
-- → **연락처 형식은 구현 시점에 최종 결정** (전화번호 vs 이메일 vs 기타)
+**게임 설정 테이블**:
 
 ```sql
--- 유니크 인덱스: contact 단독
-CREATE UNIQUE INDEX IF NOT EXISTS idx_scores_unique_contact
-  ON scores (contact);
-
--- UPSERT: 새 점수가 기존보다 높을 때만 갱신
-INSERT INTO scores (player_name, contact, score, user_agent, ip_address)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (contact)
-DO UPDATE SET score = GREATEST(scores.score, EXCLUDED.score),
-              player_name = EXCLUDED.player_name,
-              user_agent = EXCLUDED.user_agent,
-              ip_address = EXCLUDED.ip_address,
-              created_at = NOW()
-WHERE EXCLUDED.score > scores.score;
+CREATE TABLE IF NOT EXISTS game_settings (
+  key VARCHAR(50) PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW()
+);
 ```
 
 **상위 N개만 보관**:
 
 ```sql
--- 주기적 정리 (INSERT 후 실행)
 DELETE FROM scores
 WHERE id NOT IN (
   SELECT id FROM scores ORDER BY score DESC LIMIT $1
 );
 ```
 
-- N 값은 환경변수 `MAX_RANKING_SIZE`로 설정 (기본값: 100)
-- 동일 유저가 여러 순위를 차지하는 일 없음 (UPSERT로 최고 점수만 유지)
+- N 값은 환경변수 `MAX_RANKING_SIZE`로 설정 (기본값: 500)
 
 **API 변경**:
 
-- `POST /scores` — 점수 저장 (이름, 연락처, 점수 / userAgent·IP는 서버에서 추출)
-- `GET /scores` — TOP 10 조회 (어드민 전용, 인증 필요)
-- `GET /scores/check?score=N` — 해당 점수가 랭킹에 들 수 있는지 확인 (유저용, 선택사항)
-- `PATCH /scores/:id` — 수정 (어드민 전용)
-- `DELETE /scores/:id` — 삭제 (어드민 전용)
+| Method | Path | 용도 | 인증 |
+| ------ | ---- | ---- | ---- |
+| GET | /scores | TOP N 조회 | 어드민 |
+| PATCH | /scores/:id | 수정 | 어드민 |
+| DELETE | /scores/:id | 삭제 | 어드민 |
+| POST | /admin/login | 어드민 인증 | 없음 |
+| POST | /admin/sprites/:key | 이미지 업로드 | 어드민 |
+| GET | /sprites/:key | 게임용 이미지 조회 | 없음 |
+| GET | /settings | 게임 설정 조회 | 없음 |
+| PATCH | /admin/settings | 게임 설정 변경 | 어드민 |
 
 ### 4.3 어드민 페이지
 
@@ -375,24 +358,37 @@ WHERE id NOT IN (
 │  DINO GAME ADMIN                    [로그아웃]   │
 ├─────────────────────────────────────────────────┤
 │                                                 │
-│  RANKING (전체 N건)                              │
+│  [랭킹 관리] [이미지 관리] [게임 설정]            │
 │                                                 │
-│  #  | 이름    | 연락처       | 점수 | 날짜       │
-│  1  | alice   | 010-1234-... | 1200 | 03-30     │
-│  2  | bob     | 010-5678-... |  980 | 03-29     │
+│  ── 랭킹 관리 ──                                 │
+│  #  | 연락처          | 점수 | 날짜              │
+│  1  | 010-****-5678  | 1200 | 03-30             │
 │  ...                                            │
-│  100 | ...                                      │
-│                                                 │
 │  각 행: [수정] [삭제]                             │
+│                                                 │
+│  ── 이미지 관리 ──                                │
+│  달리는 쥐: [현재 이미지] [업로드]                 │
+│  장애물 1~5: [현재 이미지] [업로드]               │
+│  ...                                            │
+│                                                 │
+│  ── 게임 설정 ──                                  │
+│  해피엔딩 트리거 점수: [10000] [저장]             │
 │                                                 │
 └─────────────────────────────────────────────────┘
 ```
 
 **인증**: 간단한 API Key 또는 비밀번호 기반. 환경변수 `ADMIN_PASSWORD`로 설정.
 - 로그인 → 서버에서 세션 토큰 또는 JWT 발급 → 이후 요청에 Bearer 토큰 포함
-- 또는 단순하게: API Key를 `Authorization` 헤더에 넣는 방식
+- → **구현 시점에 결정** (세션 vs JWT vs 단순 API Key).
 
-→ **구현 시점에 결정** (세션 vs JWT vs 단순 API Key).
+**이미지 업로드 관리**:
+- 업로드 시 픽셀 크기 검증 (지정 크기와 불일치 시 업로드 거부)
+- WebP/PNG 포맷만 허용
+- 업로드 즉시 반영
+
+**해피엔딩 점수 관리**:
+- 해피엔딩 트리거 점수를 어드민에서 변경 가능
+- 변경 시 즉시 반영
 
 ### 4.4 iframe 삽입 최적화
 
@@ -411,7 +407,6 @@ WHERE id NOT IN (
 고려 사항:
 - `Content-Security-Policy: frame-ancestors` 설정으로 허용 도메인 제한
 - iframe 내 포커스 처리 (클릭 시 자동 포커스)
-- 게임 화면에 랭킹 미노출이므로 iframe 높이를 줄일 수 있음 (canvas + 버튼 영역만)
 
 ### 4.5 API URL 설정
 
@@ -433,10 +428,13 @@ const API_URL = window.__DINO_API_URL__
 │    ├─ js/Game.js          (게임 루프 + 상태 머신)    │
 │    ├─ js/SpriteLoader.js  (이미지 preload)           │  ← 신규
 │    ├─ js/Intro.js         (인트로 연출)              │  ← 신규
+│    ├─ js/HappyEnding.js   (해피엔딩 연출)            │  ← 신규
+│    ├─ js/DeathAnimation.js(사망 애니메이션)           │  ← 신규
+│    ├─ js/Girlfriend.js    (여친 쥐 캐릭터)           │  ← 신규
 │    ├─ js/Dino.js          (캐릭터)                   │
 │    ├─ js/Obstacle.js      (장애물)                   │
 │    ├─ js/api.js           (서버 통신)                │
-│    └─ assets/sprites/     (교체 가능한 이미지)        │  ← 신규
+│    └─ assets/sprites/     (placeholder 이미지)       │
 │                                                     │
 │  admin.html (별도 페이지, iframe 아님)               │  ← 신규
 │    └─ js/admin.js                                   │  ← 신규
@@ -446,12 +444,14 @@ const API_URL = window.__DINO_API_URL__
                       ▼
 ┌─ Backend (NestJS) ──────────────────────────────────┐
 │                                                     │
-│  POST   /scores              (점수 저장, UPSERT)    │
 │  GET    /scores              (전체 조회, 어드민)     │
-│  GET    /scores/check?score= (랭킹 진입 확인)       │
 │  PATCH  /scores/:id          (수정, 어드민)          │
 │  DELETE /scores/:id          (삭제, 어드민)          │
 │  POST   /admin/login         (어드민 인증)           │  ← 신규
+│  POST   /admin/sprites/:key  (이미지 업로드)         │  ← 신규
+│  GET    /sprites/:key        (게임용 이미지 조회)    │  ← 신규
+│  GET    /settings            (게임 설정 조회)        │  ← 신규
+│  PATCH  /admin/settings      (게임 설정 변경)        │  ← 신규
 │                                                     │
 └─────────────────────┬───────────────────────────────┘
                       │
@@ -462,6 +462,9 @@ const API_URL = window.__DINO_API_URL__
 │    ip_address, created_at                           │
 │  - UNIQUE(contact) → 유저당 최고점만                │
 │  - 상위 N개만 유지                                   │
+│                                                     │
+│  game_settings 테이블                                │  ← 신규
+│  sprites 테이블                                      │  ← 신규
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -469,8 +472,12 @@ const API_URL = window.__DINO_API_URL__
 
 **왜 이미지 스프라이트 시스템인가?**
 - 현재 `sprites.js`의 픽셀 좌표 배열은 캐릭터 교체가 사실상 불가능
-- 이미지 파일 교체만으로 디자이너가 직접 캐릭터를 바꿀 수 있어야 프로모션마다 재사용 가능
+- 이미지 파일 교체만으로 캐릭터를 바꿀 수 있어야 프로모션마다 재사용 가능
 - 대안: sprite sheet 한 장 → 교체 편의성이 떨어져 기각
+
+**왜 이미지를 서버에 저장하는가?**
+- 기존: 정적 파일 교체 + 프론트엔드 재배포 필요
+- 변경: 어드민에서 업로드 → 즉시 반영, 재배포 불필요
 
 **왜 WebP인가?**
 - PNG 대비 30~50% 용량 절감 → 모바일 로딩 속도 개선
@@ -478,7 +485,7 @@ const API_URL = window.__DINO_API_URL__
 - PNG도 허용하여 디자이너가 WebP 변환을 못 하는 경우 대응
 
 **왜 인트로 화면을 추가하는가?**
-- preload 시간 동안 빈 화면 대신 브랜드 노출 (Hellodude)
+- preload 시간 동안 빈 화면 대신 브랜드 노출 (Run Dude Run!)
 - 이미지 로드 완료 전 게임 시작을 방지하여 렌더링 깨짐 방지
 
 **왜 유저 화면에서 랭킹을 숨기는가?**
@@ -486,15 +493,10 @@ const API_URL = window.__DINO_API_URL__
 - 연락처 등 개인정보가 포함되므로 유저에게 직접 노출 부적절
 - 어드민이 별도로 관리하여 경품 지급 등에 활용
 
-**왜 UPSERT + contact 단독 유니크인가?**
-- 같은 유저가 100번 플레이하면 랭킹 100개를 독점하는 문제 방지
-- 유저당 최고 점수만 유지 → 공정한 랭킹
-- `contact` 단독으로 유니크 식별 — 이름은 변경 가능하지만 연락처는 고유
-- 엄격한 validation + 정규화로 동일 연락처의 다른 포맷 입력 방지 (예: `010-1234-5678` vs `01012345678`)
-
 **왜 NestJS를 유지하는가?**
 - 이미 구축된 코드가 있고, CRUD가 단순하여 서버리스 전환 대비 이점 없음
-- userAgent/IP 추출 등 서버 사이드 로직이 필요하여 Supabase 직접 접근보다 NestJS가 적합
+- userAgent/IP 추출 등 서버 사이드 로직이 필요
+- 이미지 업로드/서빙 로직도 NestJS에서 처리
 - 단, 배포 플랫폼은 변경 필요 (아래 인프라 섹션 참조)
 
 ---
@@ -506,29 +508,35 @@ Game (게임 루프 + 상태 머신)
   ├─ SpriteLoader (이미지 preload + placeholder)        ← 신규
   ├─ Intro (타이틀 표시 + 떨어지는 연출)                ← 신규
   ├─ Dino (캐릭터 — 이미지 or placeholder 렌더링)
-  ├─ Obstacle (장애물 — 이미지 or placeholder 렌더링)
+  ├─ Girlfriend (여친 쥐)                               ← 신규
+  ├─ Obstacle (장애물 — 5종 + 비행 1종)
   ├─ Ground (지면 — 이미지 타일 or placeholder)
   ├─ Cloud (구름)
   ├─ NightMode (밤/낮 전환)
-  ├─ Score (점수 표시)
+  ├─ Score (점수 표시 — 50점 단위)
+  ├─ HappyEnding (해피엔딩 연출)                        ← 신규
+  ├─ DeathAnimation (사망 애니메이션)                    ← 신규
   └─ api.js (서버 통신)
 
 Admin (어드민 페이지)                                   ← 신규
-  └─ admin.js (로그인 + 랭킹 CRUD)
+  └─ admin.js (로그인 + 랭킹 CRUD + 이미지 업로드 + 게임 설정)
 ```
 
 **재사용 컴포넌트 테이블**:
 
 | 컴포넌트 | 경로 | 용도 |
 | -------- | ---- | ---- |
-| Game | `frontend/js/Game.js` | 게임 메인 루프 (수정: 상태 머신 확장) |
+| Game | `frontend/js/Game.js` | 게임 메인 루프 (수정: happyending 상태 추가) |
 | SpriteLoader | `frontend/js/SpriteLoader.js` | 이미지 preload + placeholder 시스템 (신규) |
 | Intro | `frontend/js/Intro.js` | 인트로 연출 (신규) |
-| Dino | `frontend/js/Dino.js` | 캐릭터 로직 (수정: 이미지 렌더링) |
-| Obstacle | `frontend/js/Obstacle.js` | 장애물 로직 (수정: 이미지 렌더링) |
+| HappyEnding | `frontend/js/HappyEnding.js` | 해피엔딩 연출 (신규) |
+| DeathAnimation | `frontend/js/DeathAnimation.js` | 사망 애니메이션 (신규) |
+| Girlfriend | `frontend/js/Girlfriend.js` | 여친 쥐 캐릭터 (신규) |
+| Dino | `frontend/js/Dino.js` | 캐릭터 로직 (수정: 이미지 렌더링, 해피엔딩 스프라이트) |
+| Obstacle | `frontend/js/Obstacle.js` | 장애물 로직 (수정: 5종, 이미지 렌더링) |
 | Ground | `frontend/js/Ground.js` | 지면 로직 (수정: 이미지 타일) |
-| Score | `frontend/js/Score.js` | 점수 표시 (유지) |
-| api.js | `frontend/js/api.js` | API 통신 (수정: URL 설정, 순위작성) |
+| Score | `frontend/js/Score.js` | 점수 표시 (수정: 50점 단위) |
+| api.js | `frontend/js/api.js` | API 통신 (수정: 스프라이트/설정 API) |
 | sprites.js | `frontend/js/sprites.js` | 제거 대상 (placeholder 시스템으로 대체) |
 | admin.js | `frontend/js/admin.js` | 어드민 페이지 로직 (신규) |
 
@@ -543,6 +551,9 @@ frontend/
   js/
     SpriteLoader.js          # 이미지 preload + placeholder 로직
     Intro.js                 # 인트로 화면 연출
+    HappyEnding.js           # 해피엔딩 연출
+    DeathAnimation.js        # 사망 애니메이션
+    Girlfriend.js            # 여친 쥐 캐릭터
     admin.js                 # 어드민 페이지 로직
   css/
     admin.css                # 어드민 페이지 스타일
@@ -550,52 +561,44 @@ frontend/
   assets/
     sprites/
       sprite-config.json     # 스프라이트 메타데이터
-      dino-run-1.webp        # (프로모션별 교체)
-      dino-run-2.webp
-      dino-duck-1.webp
-      dino-duck-2.webp
-      dino-jump-1.webp
-      dino-jump-2.webp
-      dino-dead-1.webp
-      dino-dead-2.webp
-      obstacle-sm-1.webp
-      obstacle-sm-2.webp
-      obstacle-lg-1.webp
-      obstacle-lg-2.webp
-      obstacle-db-1.webp
-      obstacle-db-2.webp
-      obstacle-fly-1.webp
-      obstacle-fly-2.webp
-      ground.webp
 
 backend/
   src/
     auth/
       auth.module.ts         # 어드민 인증 모듈
       auth.guard.ts          # API Key / JWT 가드
+    sprites/
+      sprites.module.ts      # 이미지 업로드/서빙 모듈
+      sprites.controller.ts  # 이미지 API
+      sprites.service.ts     # 이미지 저장/조회
+    settings/
+      settings.module.ts     # 게임 설정 모듈
+      settings.controller.ts # 설정 API
+      settings.service.ts    # 설정 저장/조회
 ```
 
 ### 수정
 
 ```
 frontend/
-  dino-game.html     # 랭킹/이름입력 제거, 다시하기/순위작성 버튼 추가
-  css/dino-game.css  # 버튼/입력 폼 스타일 추가
+  dino-game.html     # 랭킹/이름입력 제거, ↻ 아이콘 추가
+  css/dino-game.css  # 아이콘 스타일, 폰트(EXEPixelPerfect) 추가
   js/
-    Game.js          # 상태 머신 확장 (loading→intro→playing→gameover), SpriteLoader 통합
-    Dino.js          # 이미지 렌더링 분기 추가
-    Obstacle.js      # 이미지 렌더링 분기 추가
-    Ground.js        # 이미지 타일 렌더링 분기 추가
-    api.js           # API URL 설정, 순위작성 API, 랭킹/관리 제거
-    config.js        # 스프라이트 경로 설정 추가
+    Game.js          # 상태 머신 확장 (happyending 추가), 점프 입력 영역 확장
+    Dino.js          # 이미지 렌더링 + 해피엔딩 스프라이트
+    Obstacle.js      # 5종 장애물, 이미지 렌더링
+    Ground.js        # 이미지 타일 렌더링
+    Score.js         # 50점 단위 증가
+    api.js           # API URL 설정, 스프라이트/설정 API 통신
+    config.js        # 스프라이트 경로 설정
 
 backend/
   src/
     scores/
-      scores.service.ts      # UPSERT + 상위 N개 정리 + userAgent/IP 저장
-      scores.controller.ts   # 어드민 가드 적용, 점수 체크 API 추가
+      scores.service.ts      # 상위 N개 정리 + userAgent/IP 저장
+      scores.controller.ts   # 어드민 가드 적용
     database/
-      database.module.ts     # 스키마 변경 (contact, user_agent, ip_address 추가)
+      database.module.ts     # 스키마 변경 (game_settings, sprites 테이블 추가)
     main.ts                  # CORS 설정, frame-ancestors 헤더
 ```
 
@@ -603,14 +606,15 @@ backend/
 
 ## 8. 데이터 흐름
 
-### 8.1 게임 시작 ~ 점수 저장
+### 8.1 게임 시작 ~ 게임오버/해피엔딩
 
 ```
 페이지 로드 → [loading 상태]
   │
-  ├─ 타이틀 "Hellodude / Running Mouse" 표시
-  ├─ SpriteLoader: sprite-config.json → 이미지 preload
-  │   ├─ 성공 → 모든 이미지 로드 완료
+  ├─ 타이틀 "Run Dude Run!" 표시
+  ├─ GET /settings → 해피엔딩 트리거 점수 로드
+  ├─ SpriteLoader: GET /sprites/:key → 이미지 preload
+  │   ├─ 성공 → 이미지 로드 완료
   │   └─ 실패 → 컬러 박스 placeholder 사용
   │
   ▼
@@ -626,39 +630,15 @@ Space/Tap → [playing 상태]
   ├─ 캐릭터(쥐) 좌측에서 달려나옴
   │
   ▼
-게임 루프
+게임 루프 (점수 50점 단위 증가, 페이지 전체 점프 입력)
   │
-  ├─ Dino.update() + draw(이미지 or placeholder)
-  ├─ Obstacle.update() + draw(이미지 or placeholder)
-  ├─ Score.update()
+  ├─ 충돌 → [gameover 상태]
+  │   ├─ 사망 애니메이션 → "Game Over" + ↻
+  │   └─ ↻ → [playing 상태]
   │
-  ▼
-충돌 → [gameover 상태]
-  │
-  ├─ GAME OVER 표시 (canvas 내)
-  ├─ '다시하기' / '순위작성' 버튼 표시 (HTML)
-  │
-  ├─ '다시하기' 클릭 → [playing 상태]
-  │
-  └─ '순위작성' 클릭
-       │
-       ├─ 이름/연락처 입력 폼 표시
-       │
-       ├─ '제출' 클릭
-       │   │
-       │   ▼
-       │   POST /scores { player_name, contact, score }
-       │     │
-       │     ▼
-       │   서버: req.headers['user-agent'] + req.ip 추출
-       │     │
-       │     ▼
-       │   UPSERT (최고 점수만 유지) → 상위 N개 초과분 DELETE
-       │     │
-       │     ▼
-       │   "점수가 저장되었습니다!" → 버튼 복귀
-       │
-       └─ '취소' 클릭 → 버튼 복귀
+  └─ 트리거 점수 도달 → [happyending 상태]
+       ├─ 여친 쥐 등장 → 만남 → "Love wins all" + ↻
+       └─ ↻ → [playing 상태]
 ```
 
 ### 8.2 어드민 플로우
@@ -671,13 +651,9 @@ admin.html 접속
   │
   ├─ 성공 → 토큰 저장 (sessionStorage)
   │   │
-  │   ▼
-  │   GET /scores (Authorization 헤더)
-  │     │
-  │     ▼
-  │   전체 랭킹 테이블 표시
-  │     ├─ [수정] → PATCH /scores/:id
-  │     └─ [삭제] → DELETE /scores/:id
+  │   ├─ 랭킹 관리: GET /scores → 조회/수정/삭제
+  │   ├─ 이미지 관리: POST /admin/sprites/:key → 업로드
+  │   └─ 게임 설정: PATCH /admin/settings → 해피엔딩 점수 변경
   │
   └─ 실패 → 에러 메시지
 ```
@@ -685,10 +661,10 @@ admin.html 접속
 ### 8.3 스프라이트 교체 플로우 (운영자)
 
 ```
-1. assets/sprites/ 폴더의 WebP/PNG 파일 교체
-2. sprite-config.json에서 size/hitbox 조정 (필요 시)
-3. 프론트엔드 배포 (정적 파일만)
-4. 캐시 무효화 (CDN 사용 시)
+1. 어드민 페이지 로그인
+2. 이미지 관리에서 교체할 스프라이트 선택
+3. 새 이미지 업로드 (픽셀 크기 자동 검증)
+4. 업로드 즉시 게임에 반영
 ```
 
 ---
@@ -730,42 +706,48 @@ app.use((req, res, next) => {
 
 ### Step 1: 인트로 화면 + 스프라이트 시스템
 
-1. `SpriteLoader.js` 신규 작성 — `sprite-config.json` 파싱 + 이미지 preload + 컬러 박스 placeholder
-2. `Intro.js` 신규 작성 — 타이틀 표시 + 떨어지는 애니메이션 연출
-3. `Game.js` 수정 — 상태 머신 확장 (`loading` → `intro` → `playing` → `gameover`)
-4. `Dino.js` 수정 — 이미지 있으면 `drawImage`, 없으면 컬러 박스+라벨 placeholder
-5. `Obstacle.js` 수정 — 동일 패턴
+1. `SpriteLoader.js` 신규 작성 — 서버에서 이미지 로드 + 컬러 박스 placeholder
+2. `Intro.js` 신규 작성 — 타이틀 "Run Dude Run!" + 떨어지는 애니메이션 연출
+3. `Game.js` 수정 — 상태 머신 확장
+4. `Dino.js` 수정 — 이미지 있으면 `drawImage`, 없으면 placeholder
+5. `Obstacle.js` 수정 — 5종 장애물
 6. `Ground.js` 수정 — 이미지 타일 or placeholder
 7. `sprites.js` 제거 + 관련 import 정리
 8. `utils.js` — `drawPixels()` 제거, `drawPlaceholder()` 추가
+9. `Score.js` 수정 — 50점 단위
+10. 폰트(EXEPixelPerfect) 적용
+11. 점프 입력 영역 → 페이지 전체
 
 → **리뷰 후 다음 Step 진행**
 
-### Step 2: 게임오버 UX + 순위작성
+### Step 2: 게임오버 UX + 사망 연출
 
-1. `dino-game.html` 수정 — 랭킹/이름입력 제거, '다시하기'/'순위작성' 버튼 + 입력 폼 추가
-2. `dino-game.css` 수정 — 버튼/폼 스타일
-3. `Game.js` 수정 — gameover 시 버튼 표시/숨김 로직
-4. `api.js` 수정 — `saveScore()`에 이름, 연락처 추가, API URL 설정 가능하게
-5. 유저 정보 `sessionStorage` 저장/복원 로직 추가
-6. 연락처 입력 실시간 포맷팅 + 클라이언트 validation
-
-→ **리뷰 후 다음 Step 진행**
-
-### Step 3: 백엔드 개선 (DB 스키마 + UPSERT + 어드민 인증)
-
-1. `database.module.ts` — 스키마 변경 (contact, user_agent, ip_address, unique index)
-2. `scores.service.ts` — UPSERT 로직 + 상위 N개 정리 + userAgent/IP 저장
-3. `scores.controller.ts` — req에서 userAgent/IP 추출, 어드민 가드 적용
-4. `auth/` 모듈 신규 — 로그인 + 가드
-5. Rate limiting 추가 (POST /scores)
+1. `DeathAnimation.js` 신규 작성
+2. `dino-game.html` 수정 — ↻ 아이콘 추가
+3. `dino-game.css` 수정 — 아이콘 스타일
+4. `Game.js` 수정 — gameover 시 사망 애니메이션 + ↻ 아이콘
+5. 다시하기 연출
 
 → **리뷰 후 다음 Step 진행**
 
-### Step 4: 어드민 페이지
+### Step 3: 해피엔딩 시나리오
 
-1. `admin.html` + `admin.css` + `admin.js` 신규 작성
-2. 로그인 → 전체 랭킹 조회 → 수정/삭제
+1. `HappyEnding.js` 신규 작성
+2. `Girlfriend.js` 신규 작성
+3. `Dino.js` 수정 — 해피엔딩 스프라이트
+4. `Game.js` 수정 — happyending 상태 전환
+5. 다시하기 연출
+
+→ **리뷰 후 다음 Step 진행**
+
+### Step 4: 백엔드 + 어드민 페이지
+
+1. `database.module.ts` — game_settings, sprites 테이블 추가
+2. `sprites/` 모듈 신규
+3. `settings/` 모듈 신규
+4. `auth/` 모듈 신규
+5. `admin.html` + `admin.css` + `admin.js` 신규
+6. 랭킹 관리 + 이미지 업로드 + 해피엔딩 점수 관리
 
 → **리뷰 후 다음 Step 진행**
 
@@ -785,11 +767,18 @@ app.use((req, res, next) => {
 | 항목 | 옵션 | 결정 시점 |
 | ---- | ---- | --------- |
 | 배포 플랫폼 | Railway vs Fly.io vs Render | Step 5 시작 전 |
-| 랭킹 보관 수 (N) | 50 / 100 / 200 | Step 3 |
-| 어드민 인증 방식 | 단순 API Key vs JWT vs 세션 | Step 3 |
+| 랭킹 보관 수 (N) | 100 / 500 | Step 4 |
+| 어드민 인증 방식 | 단순 API Key vs JWT vs 세션 | Step 4 |
+| 이미지 저장 방식 | DB (BYTEA) vs 파일 스토리지 (S3/로컬) | Step 4 |
 | 프로모션 종료 후 데이터 처리 | 삭제 / 아카이브 / 유지 | 프로모션 기획 확정 시 |
 | 부모 페이지와 postMessage 통신 | 필요 여부는 스토어 측 요구사항에 따라 | Step 5 |
-| 연락처 형식 검증 | 전화번호 (`010-XXXX-XXXX`) / 이메일 / 기타 | Step 2 |
+| PC 게임 크기 | canvas 내부 해상도 변경 vs CSS 스케일링 | Step 1 |
+| 해피엔딩 기본 트리거 점수 | 클라이언트 확인 필요 | Step 3 |
+| 해피엔딩 시 점수 처리 | 최종 점수 고정 / 보너스 점수 등 | Step 3 |
+| 장애물 등장 패턴 | 5종 장애물의 등장 순서/빈도/조합 규칙 | Step 1 |
+| 폰트 라이선스 | EXEPixelPerfect 사용 확정 여부 | Step 1 |
+| 신규 스프라이트 크기 | 해피엔딩 쥐, 여친 쥐, 장애물 1~5 정확한 크기 | 이미지 리소스 수령 시 |
+| 숙이기 스프라이트 | 클라이언트에 요청 중 (2026-04-16) | 이미지 리소스 수령 시 |
 
 ---
 
@@ -804,7 +793,7 @@ app.use((req, res, next) => {
 | `frontend/js/Obstacle.js` | 장애물 로직 — 타입별 분기 참고 |
 | `frontend/js/api.js` | API 통신 — 현재 엔드포인트 구조 참고 |
 | `frontend/dino-game.html` | 현재 HTML 구조 — 랭킹/입력란 제거 대상 |
-| `frontend/css/dino-game.css` | 현재 스타일 — 버튼/폼 스타일 추가 대상 |
+| `frontend/css/dino-game.css` | 현재 스타일 — 아이콘/폰트 스타일 추가 대상 |
 | `backend/src/scores/scores.service.ts` | DB 쿼리 패턴 참고 |
 | `backend/src/scores/scores.controller.ts` | API 엔드포인트 구조 참고 |
 | `backend/src/database/database.module.ts` | DB 연결 설정, 스키마 변경 대상 |
