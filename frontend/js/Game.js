@@ -13,6 +13,14 @@ import { Cloud } from './Cloud.js';
 import { NightMode } from './NightMode.js';
 import { Score } from './Score.js';
 
+const State = {
+  LOADING: 'loading',
+  INTRO: 'intro',
+  PLAYING: 'playing',
+  GAMEOVER: 'gameover',
+  HAPPYENDING: 'happyending',
+};
+
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 canvas.width = CANVAS_WIDTH;
@@ -20,7 +28,7 @@ canvas.height = CANVAS_HEIGHT;
 
 class Game {
   constructor() {
-    this.state = 'idle'; // 'idle', 'playing', 'gameover'
+    this.state = State.LOADING;
     this.dino = new Dino();
     this.ground = new Ground();
     this.obstacles = [];
@@ -32,32 +40,43 @@ class Game {
     this.cloudTimer = 0;
     this.gameOverDelay = 0;
 
-    spriteLoader.init().catch((err) => console.warn('[Game] SpriteLoader init failed:', err));
-
     // Pre-populate clouds
     for (let i = 0; i < 3; i++) {
       this.clouds.push(new Cloud(100 + i * 200, 15 + Math.random() * 40));
     }
 
     this.bindEvents();
+
+    // SpriteLoader init → LOADING → INTRO
+    spriteLoader.init()
+      .then(() => {
+        console.log('[Game] SpriteLoader ready, transitioning to INTRO');
+        this.state = State.INTRO;
+      })
+      .catch((err) => {
+        console.warn('[Game] SpriteLoader init failed, transitioning to INTRO anyway:', err);
+        this.state = State.INTRO;
+      });
+
     this.loop();
   }
 
   bindEvents() {
     const handleAction = (action) => {
       if (action === 'jump') {
-        if (this.state === 'idle') {
+        if (this.state === State.INTRO) {
           this.start();
-        } else if (this.state === 'gameover') {
+        } else if (this.state === State.GAMEOVER) {
           if (this.gameOverDelay <= 0) this.restart();
-        } else {
+        } else if (this.state === State.PLAYING) {
           this.dino.jump();
         }
+        // LOADING, HAPPYENDING: jump 무시
       }
-      if (action === 'duckStart' && this.state === 'playing') {
+      if (action === 'duckStart' && this.state === State.PLAYING) {
         this.dino.duck(true);
       }
-      if (action === 'duckEnd' && this.state === 'playing') {
+      if (action === 'duckEnd' && this.state === State.PLAYING) {
         this.dino.duck(false);
       }
     };
@@ -119,12 +138,12 @@ class Game {
   }
 
   start() {
-    this.state = 'playing';
+    this.state = State.PLAYING;
     this.dino.jump();
   }
 
   restart() {
-    this.state = 'playing';
+    this.state = State.PLAYING;
     this.dino = new Dino();
     this.obstacles = [];
     this.speed = INITIAL_SPEED;
@@ -147,12 +166,30 @@ class Game {
   }
 
   update() {
-    if (this.state === 'gameover') {
-      if (this.gameOverDelay > 0) this.gameOverDelay--;
-      return;
-    }
-    if (this.state !== 'playing') return;
+    switch (this.state) {
+      case State.LOADING:
+        // SpriteLoader preload 진행 중 — 대기
+        break;
 
+      case State.INTRO:
+        // 입력 대기 — 별도 업데이트 없음
+        break;
+
+      case State.PLAYING:
+        this.updatePlaying();
+        break;
+
+      case State.GAMEOVER:
+        if (this.gameOverDelay > 0) this.gameOverDelay--;
+        break;
+
+      case State.HAPPYENDING:
+        // 추후 Step 3-1에서 구현
+        break;
+    }
+  }
+
+  updatePlaying() {
     // Speed up
     if (this.speed < MAX_SPEED) {
       this.speed += SPEED_INCREMENT;
@@ -194,10 +231,12 @@ class Game {
         return;
       }
     }
+
+    // TODO: Step 3-1에서 해피엔딩 트리거 점수 체크 추가
   }
 
   gameOver() {
-    this.state = 'gameover';
+    this.state = State.GAMEOVER;
     this.score.save();
     this.gameOverDelay = 20; // Prevent instant restart
 
@@ -214,6 +253,55 @@ class Game {
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     document.body.style.background = colors.bg;
 
+    switch (this.state) {
+      case State.LOADING:
+        this.drawLoading(colors);
+        break;
+
+      case State.INTRO:
+        this.drawIntro(colors);
+        break;
+
+      case State.PLAYING:
+        this.drawPlaying(colors);
+        break;
+
+      case State.GAMEOVER:
+        this.drawPlaying(colors);
+        this.drawGameOver(colors);
+        break;
+
+      case State.HAPPYENDING:
+        this.drawPlaying(colors);
+        // 추후 Step 3-1에서 해피엔딩 연출 추가
+        break;
+    }
+  }
+
+  drawLoading(colors) {
+    ctx.fillStyle = colors.fg;
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Loading...', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+  }
+
+  drawIntro(colors) {
+    // Ground + Clouds (배경 요소)
+    this.ground.draw(ctx, colors.fg);
+    for (const cloud of this.clouds) cloud.draw(ctx, colors.cloudFg);
+
+    // Dino (대기 자세)
+    this.dino.draw(ctx, colors.fg);
+
+    ctx.fillStyle = colors.fg;
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('PRESS SPACE TO START', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 20);
+    ctx.font = '9px monospace';
+    ctx.fillText('or tap the screen', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 5);
+  }
+
+  drawPlaying(colors) {
     // Night elements (moon, stars)
     this.nightMode.draw(ctx, colors.fg);
 
@@ -231,29 +319,18 @@ class Game {
 
     // Score
     this.score.draw(ctx, colors.fg);
+  }
 
-    // Idle screen
-    if (this.state === 'idle') {
-      ctx.fillStyle = colors.fg;
-      ctx.font = '12px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('PRESS SPACE TO START', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 20);
-      ctx.font = '9px monospace';
-      ctx.fillText('or tap the screen', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 5);
-    }
+  drawGameOver(colors) {
+    ctx.fillStyle = colors.fg;
+    ctx.font = 'bold 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('G A M E  O V E R', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 15);
 
-    // Game over screen
-    if (this.state === 'gameover') {
-      ctx.fillStyle = colors.fg;
-      ctx.font = 'bold 14px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('G A M E  O V E R', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 15);
-
-      // Restart icon
-      const rx = CANVAS_WIDTH / 2 - 12;
-      const ry = CANVAS_HEIGHT / 2;
-      drawPixels(ctx, SPRITES.restart, rx, ry, 2.2, colors.fg);
-    }
+    // Restart icon
+    const rx = CANVAS_WIDTH / 2 - 12;
+    const ry = CANVAS_HEIGHT / 2;
+    drawPixels(ctx, SPRITES.restart, rx, ry, 2.2, colors.fg);
   }
 
   loop() {
