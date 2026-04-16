@@ -12,10 +12,12 @@ import { Ground } from './Ground.js';
 import { Cloud } from './Cloud.js';
 import { NightMode } from './NightMode.js';
 import { Score } from './Score.js';
+import { Intro } from './Intro.js';
 
 const State = {
   LOADING: 'loading',
   INTRO: 'intro',
+  STARTING: 'starting',
   PLAYING: 'playing',
   GAMEOVER: 'gameover',
   HAPPYENDING: 'happyending',
@@ -29,6 +31,7 @@ canvas.height = CANVAS_HEIGHT;
 class Game {
   constructor() {
     this.state = State.LOADING;
+    this.intro = new Intro();
     this.dino = new Dino();
     this.ground = new Ground();
     this.obstacles = [];
@@ -51,10 +54,12 @@ class Game {
     spriteLoader.init()
       .then(() => {
         console.log('[Game] SpriteLoader ready, transitioning to INTRO');
+        this.intro.onPreloadComplete();
         this.state = State.INTRO;
       })
       .catch((err) => {
         console.warn('[Game] SpriteLoader init failed, transitioning to INTRO anyway:', err);
+        this.intro.onPreloadComplete();
         this.state = State.INTRO;
       });
 
@@ -65,13 +70,13 @@ class Game {
     const handleAction = (action) => {
       if (action === 'jump') {
         if (this.state === State.INTRO) {
-          this.start();
+          this.startIntroAnimation();
         } else if (this.state === State.GAMEOVER) {
           if (this.gameOverDelay <= 0) this.restart();
         } else if (this.state === State.PLAYING) {
           this.dino.jump();
         }
-        // LOADING, HAPPYENDING: jump 무시
+        // LOADING, STARTING, HAPPYENDING: jump 무시
       }
       if (action === 'duckStart' && this.state === State.PLAYING) {
         this.dino.duck(true);
@@ -137,6 +142,13 @@ class Game {
     canvas.style.height = h + 'px';
   }
 
+  startIntroAnimation() {
+    this.state = State.STARTING;
+    this.intro.triggerStartAnimation();
+    // Dino를 화면 밖으로 이동 (Intro가 진입 위치를 관리)
+    this.dino.x = -50;
+  }
+
   start() {
     this.state = State.PLAYING;
     this.dino.jump();
@@ -168,11 +180,20 @@ class Game {
   update() {
     switch (this.state) {
       case State.LOADING:
-        // SpriteLoader preload 진행 중 — 대기
+        this.intro.update();
         break;
 
       case State.INTRO:
-        // 입력 대기 — 별도 업데이트 없음
+        this.intro.update();
+        break;
+
+      case State.STARTING:
+        this.intro.update();
+        this.dino.x = this.intro.getDinoX();
+        this.dino.update();
+        if (this.intro.isStartAnimationComplete()) {
+          this.start();
+        }
         break;
 
       case State.PLAYING:
@@ -262,6 +283,10 @@ class Game {
         this.drawIntro(colors);
         break;
 
+      case State.STARTING:
+        this.drawStarting(colors);
+        break;
+
       case State.PLAYING:
         this.drawPlaying(colors);
         break;
@@ -279,26 +304,27 @@ class Game {
   }
 
   drawLoading(colors) {
-    ctx.fillStyle = colors.fg;
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('Loading...', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+    this.ground.draw(ctx, colors.fg);
+    this.intro.draw(ctx, colors);
   }
 
   drawIntro(colors) {
     // Ground + Clouds (배경 요소)
-    this.ground.draw(ctx, colors.fg);
     for (const cloud of this.clouds) cloud.draw(ctx, colors.cloudFg);
+    this.ground.draw(ctx, colors.fg);
 
     // Dino (대기 자세)
     this.dino.draw(ctx, colors.fg);
 
-    ctx.fillStyle = colors.fg;
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('PRESS SPACE TO START', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 20);
-    ctx.font = '9px monospace';
-    ctx.fillText('or tap the screen', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 5);
+    // Intro overlay (타이틀 + 프롬프트)
+    this.intro.draw(ctx, colors);
+  }
+
+  drawStarting(colors) {
+    for (const cloud of this.clouds) cloud.draw(ctx, colors.cloudFg);
+    this.ground.draw(ctx, colors.fg);
+    this.dino.draw(ctx, colors.fg);
+    this.intro.draw(ctx, colors);
   }
 
   drawPlaying(colors) {
