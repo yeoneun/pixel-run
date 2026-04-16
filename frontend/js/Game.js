@@ -150,7 +150,6 @@ class Game {
     this.obstacles = [];
     this.speed = INITIAL_SPEED;
     this.score = new Score();
-    this.score.highScore = parseInt(localStorage.getItem('dinoHighScore') || '0', 10);
     this.obstacleTimer = 0;
     this.ground = new Ground();
     this.nightMode = new NightMode();
