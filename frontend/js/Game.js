@@ -12,6 +12,7 @@ import { NightMode } from './NightMode.js';
 import { Score } from './Score.js';
 import { Intro } from './Intro.js';
 import { DeathAnimation } from './DeathAnimation.js';
+import { HappyEnding } from './HappyEnding.js';
 
 const State = {
   LOADING: 'loading',
@@ -39,6 +40,9 @@ class Game {
     this.nightMode = new NightMode();
     this.score = new Score();
     this.deathAnimation = new DeathAnimation();
+    this.happyEnding = new HappyEnding();
+    this.happyEndingScore = 1500; // 테스트용 (서버 설정 로드 전 기본값)
+    this.happyEndingTriggered = false;
     this.speed = INITIAL_SPEED;
     this.obstacleTimer = 0;
     this.cloudTimer = 0;
@@ -73,10 +77,12 @@ class Game {
           this.startIntroAnimation();
         } else if (this.state === State.GAMEOVER) {
           if (this.deathAnimation.isComplete()) this.restart();
+        } else if (this.state === State.HAPPYENDING) {
+          if (this.happyEnding.isShowingText()) this.restartFromHappyEnding();
         } else if (this.state === State.PLAYING) {
           this.dino.jump();
         }
-        // LOADING, STARTING, HAPPYENDING: jump 무시
+        // LOADING, STARTING: jump 무시
       }
       if (action === 'duckStart' && this.state === State.PLAYING) {
         this.dino.duck(true);
@@ -154,10 +160,30 @@ class Game {
     this.speed = INITIAL_SPEED;
     this.score = new Score();
     this.deathAnimation = new DeathAnimation();
+    this.happyEnding = new HappyEnding();
+    this.happyEndingTriggered = false;
     this.obstacleTimer = 0;
     this.ground = new Ground();
     this.nightMode = new NightMode();
     this.restartTargetX = 25; // Dino 기본 위치
+  }
+
+  restartFromHappyEnding() {
+    // "Love wins all" 텍스트 사라짐 + 오른쪽 캐릭터들 퇴장
+    this.happyEnding.triggerExit(() => {
+      // 퇴장 완료 → 주인공 왼쪽에서 재등장
+      this.dino = new Dino();
+      this.dino.x = -50;
+      this.obstacles = [];
+      this.speed = INITIAL_SPEED;
+      this.score = new Score();
+      this.happyEndingTriggered = false;
+      this.obstacleTimer = 0;
+      this.ground = new Ground();
+      this.nightMode = new NightMode();
+      this.restartTargetX = 25;
+      this.state = State.RESTARTING;
+    });
   }
 
   spawnObstacle() {
@@ -209,7 +235,15 @@ class Game {
         break;
 
       case State.HAPPYENDING:
-        // 추후 Step 3-1에서 구현
+        this.dino.update();
+        this.ground.update(this.speed);
+        this.happyEnding.update(this.obstacles);
+        // 기존 장애물은 계속 이동 (화면 밖으로 빠져나감)
+        for (const obs of this.obstacles) {
+          obs.speed = this.speed;
+          obs.update();
+        }
+        this.obstacles = this.obstacles.filter((o) => o.x > -50);
         break;
     }
   }
@@ -225,12 +259,14 @@ class Game {
     this.score.update();
     this.nightMode.update(this.score.displayValue);
 
-    // Obstacles
-    this.obstacleTimer++;
-    const minGap = Math.max(MIN_OBSTACLE_GAP - this.speed * 3, 40);
-    if (this.obstacleTimer > minGap + Math.random() * 40) {
-      this.spawnObstacle();
-      this.obstacleTimer = 0;
+    // Obstacles — 해피엔딩 트리거 후에는 새 장애물 스폰 중단
+    if (!this.happyEndingTriggered) {
+      this.obstacleTimer++;
+      const minGap = Math.max(MIN_OBSTACLE_GAP - this.speed * 3, 40);
+      if (this.obstacleTimer > minGap + Math.random() * 40) {
+        this.spawnObstacle();
+        this.obstacleTimer = 0;
+      }
     }
 
     for (const obs of this.obstacles) {
@@ -248,7 +284,7 @@ class Game {
     for (const cloud of this.clouds) cloud.update();
     this.clouds = this.clouds.filter((c) => c.x > -60);
 
-    // Collision
+    // Collision — 해피엔딩 트리거 후에도 기존 장애물 충돌 유효
     const dinoHB = this.dino.hitbox;
     for (const obs of this.obstacles) {
       if (checkCollision(dinoHB, obs.hitbox)) {
@@ -257,7 +293,16 @@ class Game {
       }
     }
 
-    // TODO: Step 3-1에서 해피엔딩 트리거 점수 체크 추가
+    // 해피엔딩 트리거 점수 체크
+    if (!this.happyEndingTriggered && this.score.displayValue >= this.happyEndingScore) {
+      this.happyEndingTriggered = true;
+    }
+
+    // 기존 장애물이 모두 빠져나간 후 HAPPYENDING 전환
+    if (this.happyEndingTriggered && this.obstacles.length === 0) {
+      this.triggerHappyEnding();
+      return;
+    }
   }
 
   gameOver(collidedObstacle) {
@@ -268,6 +313,11 @@ class Game {
     this.deathAnimation.start(this.dino, collidedObstacle);
     // 충돌 장애물은 DeathAnimation이 렌더링하므로 목록에서 제거
     this.obstacles = this.obstacles.filter((o) => o !== collidedObstacle);
+  }
+
+  triggerHappyEnding() {
+    this.state = State.HAPPYENDING;
+    this.happyEnding.start(this.dino);
   }
 
   draw() {
@@ -311,8 +361,13 @@ class Game {
         break;
 
       case State.HAPPYENDING:
-        this.drawPlaying(colors);
-        // 추후 Step 3-1에서 해피엔딩 연출 추가
+        this.nightMode.draw(ctx, colors.fg);
+        for (const cloud of this.clouds) cloud.draw(ctx, colors.cloudFg);
+        this.ground.draw(ctx, colors.fg);
+        for (const obs of this.obstacles) obs.draw(ctx, colors.fg);
+        this.dino.draw(ctx, colors.fg);
+        this.score.draw(ctx, colors.fg);
+        this.happyEnding.draw(ctx, colors);
         break;
     }
 

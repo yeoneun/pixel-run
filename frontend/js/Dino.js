@@ -9,6 +9,7 @@ export class Dino {
     this.ducking = false;
     this.jumping = false;
     this.dead = false;
+    this.happy = false;
     this.vy = 0;
     this.frame = 0;
     this.frameTimer = 0;
@@ -79,6 +80,7 @@ export class Dino {
   }
 
   _getSpriteKey() {
+    if (this.happy) return `dino-happy-${this.frame + 1}`;
     if (this.dead) return `dino-dead-${this.frame + 1}`;
     if (this.ducking) return `dino-duck-${this.frame + 1}`;
     if (this.jumping) return `dino-jump-${this.frame + 1}`;
@@ -86,6 +88,7 @@ export class Dino {
   }
 
   _getLabel() {
+    if (this.happy) return 'HAPPY';
     if (this.dead) return 'DEAD';
     if (this.ducking) return 'DUCK';
     if (this.jumping) return 'JUMP';
