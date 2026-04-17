@@ -8,8 +8,8 @@
     "happyEnding": ["dino-happy-1.webp"],
     "size": { "w": 44, "h": 53 },
     "duckSize": { "w": 59, "h": 34 },
-    "hitbox": { "x": 2, "y": 0, "w": 40, "h": 53 },
-    "duckHitbox": { "x": 2, "y": 3, "w": 55, "h": 29 }
+    "hitbox": { "x": 4, "y": 4, "w": 36, "h": 46 },
+    "duckHitbox": { "x": 4, "y": 5, "w": 51, "h": 25 }
   },
   "girlfriend": {
     "idle": ["girlfriend-idle-1.webp"],
@@ -21,38 +21,38 @@
       "type": "obstacle-1",
       "sprites": ["obstacle-1-1.webp"],
       "size": { "w": 27, "h": 21 },
-      "hitbox": { "x": 1, "y": 0, "w": 25, "h": 21 }
+      "hitbox": { "x": 2, "y": 2, "w": 23, "h": 17 }
     },
     {
       "type": "obstacle-2",
       "sprites": ["obstacle-2-1.webp"],
       "size": { "w": 60, "h": 21 },
-      "hitbox": { "x": 1, "y": 0, "w": 61, "h": 21 }
+      "hitbox": { "x": 3, "y": 2, "w": 54, "h": 17 }
     },
     {
       "type": "obstacle-3",
       "sprites": ["obstacle-3-1.webp"],
       "size": { "w": 52, "h": 38 },
-      "hitbox": { "x": 2, "y": 0, "w": 48, "h": 38 }
+      "hitbox": { "x": 4, "y": 3, "w": 44, "h": 32 }
     },
     {
       "type": "obstacle-4",
       "sprites": ["obstacle-4-1.webp"],
       "size": { "w": 52, "h": 38 },
-      "hitbox": { "x": 2, "y": 0, "w": 48, "h": 38 }
+      "hitbox": { "x": 4, "y": 3, "w": 44, "h": 32 }
     },
     {
       "type": "obstacle-5",
       "sprites": ["obstacle-5-1.webp"],
       "size": { "w": 52, "h": 38 },
-      "hitbox": { "x": 2, "y": 0, "w": 48, "h": 38 }
+      "hitbox": { "x": 4, "y": 3, "w": 44, "h": 32 }
     }
   ],
   "flyingObstacles": [
     {
       "sprites": ["obstacle-fly-1.webp", "obstacle-fly-2.webp"],
       "size": { "w": 47, "h": 58 },
-      "hitbox": { "x": 1, "y": 1, "w": 45, "h": 56 }
+      "hitbox": { "x": 3, "y": 4, "w": 41, "h": 50 }
     }
   ],
   "ground": {

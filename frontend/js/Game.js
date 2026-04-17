@@ -53,6 +53,7 @@ class Game {
     this.speed = INITIAL_SPEED;
     this.obstacleTimer = 0;
     this.cloudTimer = 0;
+    this.debugHitbox = false;
 
     // Pre-populate clouds
     for (let i = 0; i < 3; i++) {
@@ -111,6 +112,9 @@ class Game {
       if (e.code === "ArrowDown") {
         e.preventDefault();
         handleAction("duckStart");
+      }
+      if (e.code === "KeyH") {
+        this.debugHitbox = !this.debugHitbox;
       }
     });
 
@@ -468,6 +472,32 @@ class Game {
 
     // Score
     this.score.draw(ctx, colors.fg);
+
+    // Debug hitbox visualization
+    if (this.debugHitbox) {
+      this.drawDebugHitboxes(ctx);
+    }
+  }
+
+  drawDebugHitboxes(ctx) {
+    ctx.save();
+    // Dino hitbox (green)
+    const dh = this.dino.hitbox;
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
+    ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.fillRect(dh.x, dh.y, dh.w, dh.h);
+    ctx.strokeRect(dh.x, dh.y, dh.w, dh.h);
+
+    // Obstacle hitboxes (red)
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+    for (const obs of this.obstacles) {
+      const oh = obs.hitbox;
+      ctx.fillRect(oh.x, oh.y, oh.w, oh.h);
+      ctx.strokeRect(oh.x, oh.y, oh.w, oh.h);
+    }
+    ctx.restore();
   }
 
   drawGameOver(colors) {
