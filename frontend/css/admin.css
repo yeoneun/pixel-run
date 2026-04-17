@@ -1,0 +1,281 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+/* Login */
+#login-section {
+  max-width: 400px;
+  margin: 100px auto;
+  text-align: center;
+}
+
+#login-form {
+  display: flex;
+  gap: 8px;
+}
+
+#login-form input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#login-form button {
+  padding: 10px 20px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#login-form button:hover {
+  background: #555;
+}
+
+.error {
+  color: #e53e3e;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+#logout-btn {
+  padding: 8px 16px;
+  background: #e53e3e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+#logout-btn:hover {
+  background: #c53030;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e2e2e2;
+}
+
+.tab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: -2px;
+}
+
+.tab.active {
+  color: #333;
+  border-bottom-color: #333;
+  font-weight: 600;
+}
+
+.tab-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Ranking Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+}
+
+th {
+  background: #f9f9f9;
+  font-weight: 600;
+}
+
+.contact-masked {
+  cursor: pointer;
+  color: #666;
+}
+
+.contact-masked:hover {
+  color: #333;
+  text-decoration: underline;
+}
+
+.action-btn {
+  padding: 4px 10px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.action-btn:hover {
+  background: #f0f0f0;
+}
+
+.action-btn.delete {
+  color: #e53e3e;
+  border-color: #e53e3e;
+}
+
+.action-btn.delete:hover {
+  background: #fff5f5;
+}
+
+/* Sprites Grid */
+#sprites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.sprite-card {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.sprite-card .sprite-key {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #555;
+  word-break: break-all;
+}
+
+.sprite-card img {
+  max-width: 100%;
+  max-height: 80px;
+  margin-bottom: 8px;
+  image-rendering: pixelated;
+  background: #e2e2e2;
+}
+
+.sprite-card .no-image {
+  width: 80px;
+  height: 60px;
+  background: #e2e2e2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.sprite-card input[type="file"] {
+  display: none;
+}
+
+.sprite-card .upload-btn {
+  padding: 6px 12px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.sprite-card .upload-btn:hover {
+  background: #555;
+}
+
+.sprite-card .upload-status {
+  font-size: 11px;
+  margin-top: 4px;
+  color: #38a169;
+}
+
+/* Settings */
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setting-row label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.setting-row input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 150px;
+}
+
+.setting-row button {
+  padding: 8px 16px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.setting-row button:hover {
+  background: #555;
+}
+
+#settings-status {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #38a169;
+}
+
+/* Utility */
+.hidden {
+  display: none !important;
+}

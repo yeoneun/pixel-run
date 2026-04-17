@@ -6,25 +6,37 @@ import {
   Delete,
   Body,
   Param,
+  Req,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ScoresService } from './scores.service';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('scores')
 export class ScoresController {
   constructor(private readonly scoresService: ScoresService) {}
 
   @Post()
-  async create(@Body() body: { player_name?: string; score: number }) {
+  async create(
+    @Body() body: { player_name?: string; contact?: string; score: number },
+    @Req() req: Request,
+  ) {
     const playerName = body.player_name || 'anonymous';
-    return this.scoresService.create(playerName, body.score);
+    const contact = body.contact || '';
+    const userAgent = req.headers['user-agent'] || '';
+    const ipAddress = req.ip || '';
+    return this.scoresService.create(playerName, contact, body.score, userAgent, ipAddress);
   }
 
+  @UseGuards(AuthGuard)
   @Get()
   async findAll() {
-    return this.scoresService.findTop10();
+    return this.scoresService.findAll();
   }
 
+  @UseGuards(AuthGuard)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const score = await this.scoresService.findOne(Number(id));
@@ -34,6 +46,7 @@ export class ScoresController {
     return score;
   }
 
+  @UseGuards(AuthGuard)
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -48,6 +61,7 @@ export class ScoresController {
     return this.scoresService.update(Number(id), playerName, score);
   }
 
+  @UseGuards(AuthGuard)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     const score = await this.scoresService.remove(Number(id));

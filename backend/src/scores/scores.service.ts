@@ -4,19 +4,57 @@ import { PG_POOL } from '../database/database.module';
 
 @Injectable()
 export class ScoresService {
-  constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
+  private readonly maxRankingSize: number;
 
-  async create(playerName: string, score: number) {
-    const result = await this.pool.query(
-      'INSERT INTO scores (player_name, score) VALUES ($1, $2) RETURNING *',
-      [playerName, score],
+  constructor(@Inject(PG_POOL) private readonly pool: Pool) {
+    this.maxRankingSize = parseInt(process.env.MAX_RANKING_SIZE || '500', 10);
+  }
+
+  async create(
+    playerName: string,
+    contact: string,
+    score: number,
+    userAgent?: string,
+    ipAddress?: string,
+  ) {
+    // contact가 있으면 UPSERT (높은 점수만 갱신)
+    let result;
+    if (contact) {
+      result = await this.pool.query(
+        `INSERT INTO scores (player_name, contact, score, user_agent, ip_address)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (contact) WHERE contact != ''
+         DO UPDATE SET
+           player_name = EXCLUDED.player_name,
+           score = GREATEST(scores.score, EXCLUDED.score),
+           user_agent = EXCLUDED.user_agent,
+           ip_address = EXCLUDED.ip_address,
+           created_at = NOW()
+         RETURNING *`,
+        [playerName, contact, score, userAgent || null, ipAddress || null],
+      );
+    } else {
+      result = await this.pool.query(
+        `INSERT INTO scores (player_name, contact, score, user_agent, ip_address)
+         VALUES ($1, '', $2, $3, $4) RETURNING *`,
+        [playerName, score, userAgent || null, ipAddress || null],
+      );
+    }
+
+    // 상위 N개만 보관
+    await this.pool.query(
+      `DELETE FROM scores WHERE id NOT IN (
+        SELECT id FROM scores ORDER BY score DESC LIMIT $1
+      )`,
+      [this.maxRankingSize],
     );
+
     return result.rows[0];
   }
 
-  async findTop10() {
+  async findAll() {
     const result = await this.pool.query(
-      'SELECT * FROM scores ORDER BY score DESC LIMIT 10',
+      'SELECT * FROM scores ORDER BY score DESC',
     );
     return result.rows;
   }

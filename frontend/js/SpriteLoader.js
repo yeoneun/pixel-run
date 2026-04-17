@@ -1,4 +1,5 @@
-const SPRITE_API_BASE = '/sprites';
+const API_URL = window.__DINO_API_URL__ || 'http://localhost:3001';
+const SPRITE_API_BASE = `${API_URL}/sprites`;
 const CONFIG_PATH = '../assets/sprite-config.json';
 
 class SpriteLoader {
