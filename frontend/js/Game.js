@@ -236,7 +236,6 @@ class Game {
 
       case State.HAPPYENDING:
         this.dino.update();
-        this.ground.update(this.speed);
         this.happyEnding.update(this.obstacles);
         // 기존 장애물은 계속 이동 (화면 밖으로 빠져나감)
         for (const obs of this.obstacles) {
