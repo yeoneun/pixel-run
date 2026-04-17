@@ -316,6 +316,10 @@ class Game {
 
   triggerHappyEnding() {
     this.state = State.HAPPYENDING;
+    this.dino.ducking = false;
+    this.dino.jumping = false;
+    this.dino.y = viewport.groundY;
+    this.dino.vy = 0;
     this.happyEnding.start(this.dino);
   }
 
