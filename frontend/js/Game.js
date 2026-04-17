@@ -201,6 +201,7 @@ class Game {
     this.happyEnding = new HappyEnding();
     this.happyEndingTriggered = false;
     this.obstacleTimer = 0;
+
     this.ground = new Ground();
     this.nightMode = new NightMode();
     this.restartTargetX = 25; // Dino 기본 위치
@@ -217,6 +218,7 @@ class Game {
       this.score = new Score();
       this.happyEndingTriggered = false;
       this.obstacleTimer = 0;
+  
       this.ground = new Ground();
       this.nightMode = new NightMode();
       this.restartTargetX = 25;
@@ -491,7 +493,13 @@ class Game {
       if (restartIcon.complete && restartIcon.naturalWidth > 0) {
         const iconW = 26;
         const iconH = 28;
-        ctx.drawImage(restartIcon, viewport.width / 2 - iconW / 2, viewport.height / 2 + 2, iconW, iconH);
+        ctx.drawImage(
+          restartIcon,
+          viewport.width / 2 - iconW / 2,
+          viewport.height / 2 + 2,
+          iconW,
+          iconH,
+        );
       }
     }
   }

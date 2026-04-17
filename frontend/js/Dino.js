@@ -19,14 +19,14 @@ export class Dino {
     const config = spriteLoader.getConfig();
     if (this.ducking && config?.dino?.duckSize) return config.dino.duckSize.w;
     if (config?.dino?.size) return config.dino.size.w;
-    return this.ducking ? 165 : 123;
+    return this.ducking ? 59 : 44;
   }
 
   get height() {
     const config = spriteLoader.getConfig();
     if (this.ducking && config?.dino?.duckSize) return config.dino.duckSize.h;
     if (config?.dino?.size) return config.dino.size.h;
-    return this.ducking ? 84 : 134;
+    return this.ducking ? 34 : 53;
   }
 
   get hitbox() {
@@ -41,7 +41,7 @@ export class Dino {
       const hb = config.dino.hitbox;
       return { x: this.x + hb.x, y: drawY + hb.y, w: hb.w, h: hb.h };
     }
-    return { x: this.x + 6, y: drawY, w: this.width - 12, h: this.height };
+    return { x: this.x + 2, y: drawY, w: this.width - 4, h: this.height };
   }
 
   jump() {
