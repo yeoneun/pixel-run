@@ -109,22 +109,37 @@ class Game {
       }
     });
 
-    // Touch support (page-wide)
+    // Touch support (page-wide) — tap to jump, swipe down to duck
+    let touchStartY = null;
+    let touchSwiped = false;
+    const SWIPE_THRESHOLD = 30;
+
     document.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      const y = touch.clientY - rect.top;
-      if (y > rect.height * 0.6) {
-        handleAction('duckStart');
-      } else {
-        handleAction('jump');
+      touchStartY = e.touches[0].clientY;
+      touchSwiped = false;
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (touchStartY !== null && !touchSwiped) {
+        const dy = e.touches[0].clientY - touchStartY;
+        if (dy > SWIPE_THRESHOLD) {
+          touchSwiped = true;
+          handleAction('duckStart');
+        }
       }
     }, { passive: false });
 
     document.addEventListener('touchend', (e) => {
       e.preventDefault();
-      handleAction('duckEnd');
+      if (touchSwiped) {
+        handleAction('duckEnd');
+      } else {
+        handleAction('jump');
+      }
+      touchStartY = null;
+      touchSwiped = false;
     }, { passive: false });
 
     // Responsive canvas
