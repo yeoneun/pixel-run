@@ -1,31 +1,35 @@
 import {
-  viewport, REFERENCE_HEIGHT, INITIAL_SPEED, MAX_SPEED,
-  SPEED_INCREMENT, MIN_OBSTACLE_GAP,
-} from './config.js';
-import { checkCollision } from './utils.js';
-import { spriteLoader } from './SpriteLoader.js';
-import { Dino } from './Dino.js';
-import { Obstacle } from './Obstacle.js';
-import { Ground } from './Ground.js';
-import { Cloud } from './Cloud.js';
-import { NightMode } from './NightMode.js';
-import { Score } from './Score.js';
-import { Intro } from './Intro.js';
-import { DeathAnimation } from './DeathAnimation.js';
-import { HappyEnding } from './HappyEnding.js';
+  viewport,
+  REFERENCE_HEIGHT,
+  INITIAL_SPEED,
+  MAX_SPEED,
+  SPEED_INCREMENT,
+  MIN_OBSTACLE_GAP,
+} from "./config.js";
+import { checkCollision } from "./utils.js";
+import { spriteLoader } from "./SpriteLoader.js";
+import { Dino } from "./Dino.js";
+import { Obstacle } from "./Obstacle.js";
+import { Ground } from "./Ground.js";
+import { Cloud } from "./Cloud.js";
+import { NightMode } from "./NightMode.js";
+import { Score } from "./Score.js";
+import { Intro } from "./Intro.js";
+import { DeathAnimation } from "./DeathAnimation.js";
+import { HappyEnding } from "./HappyEnding.js";
 
 const State = {
-  LOADING: 'loading',
-  INTRO: 'intro',
-  STARTING: 'starting',
-  PLAYING: 'playing',
-  GAMEOVER: 'gameover',
-  RESTARTING: 'restarting',
-  HAPPYENDING: 'happyending',
+  LOADING: "loading",
+  INTRO: "intro",
+  STARTING: "starting",
+  PLAYING: "playing",
+  GAMEOVER: "gameover",
+  RESTARTING: "restarting",
+  HAPPYENDING: "happyending",
 };
 
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 canvas.width = viewport.width;
 canvas.height = viewport.height;
 
@@ -55,14 +59,18 @@ class Game {
     this.bindEvents();
 
     // SpriteLoader init → LOADING → INTRO
-    spriteLoader.init()
+    spriteLoader
+      .init()
       .then(() => {
-        console.log('[Game] SpriteLoader ready, transitioning to INTRO');
+        console.log("[Game] SpriteLoader ready, transitioning to INTRO");
         this.intro.onPreloadComplete();
         this.state = State.INTRO;
       })
       .catch((err) => {
-        console.warn('[Game] SpriteLoader init failed, transitioning to INTRO anyway:', err);
+        console.warn(
+          "[Game] SpriteLoader init failed, transitioning to INTRO anyway:",
+          err,
+        );
         this.intro.onPreloadComplete();
         this.state = State.INTRO;
       });
@@ -72,7 +80,7 @@ class Game {
 
   bindEvents() {
     const handleAction = (action) => {
-      if (action === 'jump') {
+      if (action === "jump") {
         if (this.state === State.INTRO) {
           this.startIntroAnimation();
         } else if (this.state === State.GAMEOVER) {
@@ -84,28 +92,28 @@ class Game {
         }
         // LOADING, STARTING: jump 무시
       }
-      if (action === 'duckStart' && this.state === State.PLAYING) {
+      if (action === "duckStart" && this.state === State.PLAYING) {
         this.dino.duck(true);
       }
-      if (action === 'duckEnd' && this.state === State.PLAYING) {
+      if (action === "duckEnd" && this.state === State.PLAYING) {
         this.dino.duck(false);
       }
     };
 
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.code === "ArrowUp") {
         e.preventDefault();
-        handleAction('jump');
+        handleAction("jump");
       }
-      if (e.code === 'ArrowDown') {
+      if (e.code === "ArrowDown") {
         e.preventDefault();
-        handleAction('duckStart');
+        handleAction("duckStart");
       }
     });
 
-    document.addEventListener('keyup', (e) => {
-      if (e.code === 'ArrowDown') {
-        handleAction('duckEnd');
+    document.addEventListener("keyup", (e) => {
+      if (e.code === "ArrowDown") {
+        handleAction("duckEnd");
       }
     });
 
@@ -114,36 +122,48 @@ class Game {
     let touchSwiped = false;
     const SWIPE_THRESHOLD = 30;
 
-    document.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      touchStartY = e.touches[0].clientY;
-      touchSwiped = false;
-    }, { passive: false });
+    document.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault();
+        touchStartY = e.touches[0].clientY;
+        touchSwiped = false;
+      },
+      { passive: false },
+    );
 
-    document.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      if (touchStartY !== null && !touchSwiped) {
-        const dy = e.touches[0].clientY - touchStartY;
-        if (dy > SWIPE_THRESHOLD) {
-          touchSwiped = true;
-          handleAction('duckStart');
+    document.addEventListener(
+      "touchmove",
+      (e) => {
+        e.preventDefault();
+        if (touchStartY !== null && !touchSwiped) {
+          const dy = e.touches[0].clientY - touchStartY;
+          if (dy > SWIPE_THRESHOLD) {
+            touchSwiped = true;
+            handleAction("duckStart");
+          }
         }
-      }
-    }, { passive: false });
+      },
+      { passive: false },
+    );
 
-    document.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      if (touchSwiped) {
-        handleAction('duckEnd');
-      } else {
-        handleAction('jump');
-      }
-      touchStartY = null;
-      touchSwiped = false;
-    }, { passive: false });
+    document.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        if (touchSwiped) {
+          handleAction("duckEnd");
+        } else {
+          handleAction("jump");
+        }
+        touchStartY = null;
+        touchSwiped = false;
+      },
+      { passive: false },
+    );
 
     // Responsive canvas
-    window.addEventListener('resize', () => this.resize());
+    window.addEventListener("resize", () => this.resize());
     this.resize();
   }
 
@@ -202,9 +222,15 @@ class Game {
   }
 
   spawnObstacle() {
-    const types = ['obstacle-1', 'obstacle-2', 'obstacle-3', 'obstacle-4', 'obstacle-5'];
+    const types = [
+      "obstacle-1",
+      "obstacle-2",
+      "obstacle-3",
+      "obstacle-4",
+      "obstacle-5",
+    ];
     if (this.score.displayValue > 200) {
-      types.push('flying');
+      types.push("flying");
     }
     const type = types[Math.floor(Math.random() * types.length)];
     this.obstacles.push(new Obstacle(type, viewport.width + 10, this.speed));
@@ -308,7 +334,10 @@ class Game {
     }
 
     // 해피엔딩 트리거 점수 체크
-    if (!this.happyEndingTriggered && this.score.displayValue >= this.happyEndingScore) {
+    if (
+      !this.happyEndingTriggered &&
+      this.score.displayValue >= this.happyEndingScore
+    ) {
       this.happyEndingTriggered = true;
     }
 
@@ -451,9 +480,9 @@ class Game {
     } else {
       // 애니메이션 완료 → Game Over 텍스트 + ↻ 아이콘
       ctx.fillStyle = colors.fg;
-      ctx.font = 'bold 14px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('G A M E  O V E R', viewport.width / 2, viewport.height / 2 - 15);
+      ctx.font = "24px 'Press Start 2P', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("Game Over", viewport.width / 2, viewport.height / 2 - 15);
 
       // Restart icon — circular arrow
       const cx = viewport.width / 2;

@@ -1,7 +1,7 @@
 import { viewport } from "./config.js";
 
-const TITLE_FONT = "'EXEPixelPerfect', monospace";
-const TITLE_TEXT = "Run Dude Run!";
+const TITLE_FONT = "'Press Start 2P', monospace";
+const TITLE_TEXT = "Run\nDude\nRun";
 const TITLE_FONT_SIZE = 28;
 const PROMPT_TEXT = "PRESS SPACE TO START";
 const SUB_PROMPT_TEXT = "or tap the screen";
@@ -92,12 +92,12 @@ export class Intro {
       const visible = Math.floor(this.promptBlink / BLINK_INTERVAL) % 2 === 0;
       if (visible) {
         ctx.fillStyle = colors.fg;
-        ctx.font = "8px monospace";
+        ctx.font = "12px 'Press Start 2P', monospace";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(PROMPT_TEXT, viewport.width / 2, this.titleY + 30);
-        ctx.font = "6px monospace";
-        ctx.fillText(SUB_PROMPT_TEXT, viewport.width / 2, this.titleY + 40);
+        ctx.fillText(PROMPT_TEXT, viewport.width / 2, this.titleY + 44);
+        ctx.font = "12px 'Press Start 2P', monospace";
+        ctx.fillText(SUB_PROMPT_TEXT, viewport.width / 2, this.titleY + 62);
       }
     }
   }

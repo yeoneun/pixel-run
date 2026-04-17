@@ -1,16 +1,16 @@
-import { viewport } from './config.js';
-import { Girlfriend } from './Girlfriend.js';
+import { viewport } from "./config.js";
+import { Girlfriend } from "./Girlfriend.js";
 
-const TITLE_FONT = "'EXEPixelPerfect', monospace";
+const TITLE_FONT = "'Press Start 2P', monospace";
 
 const Phase = {
-  CLEAR_OBSTACLES: 'clear_obstacles',   // 장애물 등장 중단, 기존 장애물 빠져나감
-  GIRLFRIEND_ENTER: 'girlfriend_enter', // 여친 쥐 오른쪽에서 등장
-  DINO_RUN: 'dino_run',                 // 주인공이 오른쪽으로 이동
-  MEET: 'meet',                         // 만남 → 하트 스프라이트
-  SHOW_TEXT: 'show_text',               // "Love wins all" + ↻
-  EXIT: 'exit',                         // 다시하기: 오른쪽 캐릭터 퇴장
-  DONE: 'done',
+  CLEAR_OBSTACLES: "clear_obstacles", // 장애물 등장 중단, 기존 장애물 빠져나감
+  GIRLFRIEND_ENTER: "girlfriend_enter", // 여친 쥐 오른쪽에서 등장
+  DINO_RUN: "dino_run", // 주인공이 오른쪽으로 이동
+  MEET: "meet", // 만남 → 하트 스프라이트
+  SHOW_TEXT: "show_text", // "Love wins all" + ↻
+  EXIT: "exit", // 다시하기: 오른쪽 캐릭터 퇴장
+  DONE: "done",
 };
 
 const GF_ENTER_SPEED = 2;
@@ -131,10 +131,10 @@ export class HappyEnding {
     // "Love wins all" 텍스트
     if (this.showText) {
       ctx.fillStyle = colors.fg;
-      ctx.font = `bold 18px ${TITLE_FONT}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('Love wins all', viewport.width / 2, viewport.height / 2 - 30);
+      ctx.font = `24px ${TITLE_FONT}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Love wins all", viewport.width / 2, viewport.height / 2 - 30);
 
       // Restart icon — circular arrow
       const cx = viewport.width / 2;

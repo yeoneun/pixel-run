@@ -41,7 +41,7 @@ export class NightMode {
   getColors() {
     const t = this.opacity;
     const bg = lerpColor([247, 247, 247], [32, 33, 36], t);
-    const fg = lerpColor([83, 83, 83], [200, 200, 200], t);
+    const fg = lerpColor([0, 0, 0], [200, 200, 200], t);
     return {
       bg: `rgb(${bg[0]},${bg[1]},${bg[2]})`,
       fg: `rgb(${fg[0]},${fg[1]},${fg[2]})`,
