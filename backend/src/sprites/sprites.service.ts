@@ -1,16 +1,15 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import { Pool } from 'pg';
-import { PG_POOL } from '../database/database.module';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../database/prisma.service';
 
 const ALLOWED_MIME_TYPES = ['image/webp', 'image/png', 'image/svg+xml'];
 
 @Injectable()
 export class SpritesService {
-  constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async upload(
     key: string,
-    imageData: Buffer,
+    imageData: Buffer | Uint8Array,
     mimeType: string,
     width?: number,
     height?: number,
@@ -21,42 +20,61 @@ export class SpritesService {
       );
     }
 
-    const result = await this.pool.query(
-      `INSERT INTO sprites (key, image_data, mime_type, width, height, updated_at)
-       VALUES ($1, $2, $3, $4, $5, NOW())
-       ON CONFLICT (key) DO UPDATE SET
-         image_data = EXCLUDED.image_data,
-         mime_type = EXCLUDED.mime_type,
-         width = EXCLUDED.width,
-         height = EXCLUDED.height,
-         updated_at = NOW()
-       RETURNING key, mime_type, width, height, updated_at`,
-      [key, imageData, mimeType, width || null, height || null],
-    );
-    return result.rows[0];
+    return this.prisma.sprite.upsert({
+      where: { key },
+      create: {
+        key,
+        imageData: new Uint8Array(imageData),
+        mimeType,
+        width: width ?? null,
+        height: height ?? null,
+      },
+      update: {
+        imageData: new Uint8Array(imageData),
+        mimeType,
+        width: width ?? null,
+        height: height ?? null,
+        updatedAt: new Date(),
+      },
+      select: {
+        key: true,
+        mimeType: true,
+        width: true,
+        height: true,
+        updatedAt: true,
+      },
+    });
   }
 
   async getMeta(key: string) {
-    const result = await this.pool.query(
-      'SELECT key, mime_type, width, height, updated_at FROM sprites WHERE key = $1',
-      [key],
-    );
-    return result.rows[0] || null;
+    return this.prisma.sprite.findUnique({
+      where: { key },
+      select: {
+        key: true,
+        mimeType: true,
+        width: true,
+        height: true,
+        updatedAt: true,
+      },
+    });
   }
 
   async getImage(key: string) {
-    const result = await this.pool.query(
-      'SELECT image_data, mime_type FROM sprites WHERE key = $1',
-      [key],
-    );
-    return result.rows[0] || null;
+    return this.prisma.sprite.findUnique({
+      where: { key },
+      select: {
+        imageData: true,
+        mimeType: true,
+      },
+    });
   }
 
   async delete(key: string) {
-    const result = await this.pool.query(
-      'DELETE FROM sprites WHERE key = $1 RETURNING key',
-      [key],
-    );
-    return result.rowCount > 0;
+    try {
+      await this.prisma.sprite.delete({ where: { key } });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

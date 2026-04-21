@@ -1,25 +1,23 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Pool } from 'pg';
-import { PG_POOL } from '../database/database.module';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
 export class SettingsService {
-  constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getAll(): Promise<Record<string, string>> {
-    const result = await this.pool.query('SELECT key, value FROM game_settings');
+    const rows = await this.prisma.gameSetting.findMany();
     const settings: Record<string, string> = {};
-    for (const row of result.rows) {
+    for (const row of rows) {
       settings[row.key] = row.value;
     }
     return settings;
   }
 
   async update(key: string, value: string) {
-    const result = await this.pool.query(
-      `UPDATE game_settings SET value = $1, updated_at = NOW() WHERE key = $2 RETURNING *`,
-      [value, key],
-    );
-    return result.rows[0] || null;
+    return this.prisma.gameSetting.update({
+      where: { key },
+      data: { value, updatedAt: new Date() },
+    });
   }
 }

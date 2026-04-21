@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model GameSetting {
+  key       String   @id @db.VarChar(50)
+  value     String   @db.Text
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  @@map("game_settings")
+}
+
+model Sprite {
+  key       String   @id @db.VarChar(100)
+  imageData Bytes    @map("image_data")
+  mimeType  String   @map("mime_type") @db.VarChar(20)
+  width     Int?
+  height    Int?
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  @@map("sprites")
+}

@@ -65,9 +65,9 @@ export class SpritesController {
       throw new NotFoundException(`Sprite "${key}" not found`);
     }
     res.set({
-      'Content-Type': sprite.mime_type,
+      'Content-Type': sprite.mimeType,
       'Cache-Control': 'public, max-age=86400',
     });
-    res.send(sprite.image_data);
+    res.send(sprite.imageData);
   }
 }
