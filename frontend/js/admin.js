@@ -78,7 +78,6 @@ function showAdminPanel() {
   document.addEventListener('keydown', resetIdleTimer);
 
   initTabs();
-  loadRanking();
   loadSprites();
   loadSettings();
   document.getElementById('save-sprites-btn').addEventListener('click', saveAllChanges);
@@ -99,78 +98,6 @@ function initTabs() {
     clearToken();
     location.reload();
   });
-}
-
-// --- Ranking ---
-function maskContact(contact) {
-  if (!contact || contact.length < 7) return contact || '-';
-  return contact.slice(0, 3) + '-****-' + contact.slice(-4);
-}
-
-async function loadRanking() {
-  const res = await apiCall('/scores');
-  if (!res) return;
-  const scores = await res.json();
-  const tbody = document.querySelector('#ranking-table tbody');
-  tbody.innerHTML = '';
-
-  scores.forEach((s, i) => {
-    const tr = document.createElement('tr');
-    const contactCell = document.createElement('td');
-    contactCell.className = 'contact-masked';
-    contactCell.textContent = maskContact(s.contact);
-    contactCell.addEventListener('click', () => {
-      contactCell.textContent = contactCell.textContent.includes('*')
-        ? (s.contact || '-')
-        : maskContact(s.contact);
-    });
-
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${escapeHtml(s.player_name)}</td>
-    `;
-    tr.appendChild(contactCell);
-    tr.innerHTML += `
-      <td>${s.score.toLocaleString()}</td>
-      <td>${new Date(s.created_at).toLocaleDateString('ko-KR')}</td>
-      <td>
-        <button class="action-btn edit-btn" data-id="${s.id}">수정</button>
-        <button class="action-btn delete delete-btn" data-id="${s.id}">삭제</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => editScore(btn.dataset.id));
-  });
-  tbody.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.addEventListener('click', () => deleteScore(btn.dataset.id));
-  });
-}
-
-async function editScore(id) {
-  const res = await apiCall(`/scores/${id}`);
-  if (!res) return;
-  const score = await res.json();
-
-  const newName = prompt('이름:', score.player_name);
-  if (newName === null) return;
-  const newScore = prompt('점수:', score.score);
-  if (newScore === null) return;
-
-  await apiCall(`/scores/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ player_name: newName, score: parseInt(newScore, 10) }),
-  });
-  loadRanking();
-}
-
-async function deleteScore(id) {
-  if (!confirm('정말 삭제하시겠습니까?')) return;
-  await apiCall(`/scores/${id}`, { method: 'DELETE' });
-  loadRanking();
 }
 
 // --- Sprites ---
