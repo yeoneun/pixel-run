@@ -1,61 +1,66 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dino Game Admin</title>
-<link rel="stylesheet" href="css/admin.css">
-</head>
-<body>
-  <div id="app">
-    <!-- Login -->
-    <div id="login-section">
-      <h1>Dino Game Admin</h1>
-      <form id="login-form">
-        <input type="password" id="password-input" placeholder="비밀번호" autocomplete="current-password">
-        <button type="submit">로그인</button>
-      </form>
-      <p id="login-error" class="error hidden"></p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Run Dude Run</title>
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Login -->
+      <div id="login-section">
+        <h1>Run Dude Run</h1>
+        <form id="login-form">
+          <input
+            type="password"
+            id="password-input"
+            placeholder="비밀번호"
+            autocomplete="current-password"
+          />
+          <button type="submit">로그인</button>
+        </form>
+        <p id="login-error" class="error hidden"></p>
+      </div>
+
+      <!-- Admin Panel -->
+      <div id="admin-panel" class="hidden">
+        <header>
+          <h1>Run Dude Run</h1>
+          <button id="logout-btn">로그아웃</button>
+        </header>
+
+        <nav class="tabs">
+          <button class="tab active" data-tab="sprites">이미지 관리</button>
+          <button class="tab" data-tab="settings">게임 설정</button>
+        </nav>
+
+        <!-- Sprites Tab -->
+        <section id="tab-sprites" class="tab-content active">
+          <h2>이미지 관리</h2>
+          <div id="preview-section">
+            <h3>게임 화면 미리보기</h3>
+            <canvas id="preview-canvas" width="600" height="270"></canvas>
+          </div>
+          <div id="sprites-container"></div>
+          <div id="save-sprites-bar">
+            <button id="save-sprites-btn" disabled>변경사항 저장</button>
+          </div>
+        </section>
+
+        <!-- Settings Tab -->
+        <section id="tab-settings" class="tab-content hidden">
+          <h2>게임 설정</h2>
+          <div class="setting-row">
+            <label for="happy-ending-score">해피엔딩 트리거 점수</label>
+            <input type="number" id="happy-ending-score" step="50" min="0" />
+            <button id="save-settings-btn">저장</button>
+          </div>
+          <p id="settings-status" class="hidden"></p>
+        </section>
+      </div>
     </div>
 
-    <!-- Admin Panel -->
-    <div id="admin-panel" class="hidden">
-      <header>
-        <h1>Dino Game Admin</h1>
-        <button id="logout-btn">로그아웃</button>
-      </header>
-
-      <nav class="tabs">
-        <button class="tab active" data-tab="sprites">이미지 관리</button>
-        <button class="tab" data-tab="settings">게임 설정</button>
-      </nav>
-
-      <!-- Sprites Tab -->
-      <section id="tab-sprites" class="tab-content active">
-        <h2>이미지 관리</h2>
-        <div id="preview-section">
-          <h3>게임 화면 미리보기</h3>
-          <canvas id="preview-canvas" width="600" height="270"></canvas>
-        </div>
-        <div id="sprites-container"></div>
-        <div id="save-sprites-bar">
-          <button id="save-sprites-btn" disabled>변경사항 저장</button>
-        </div>
-      </section>
-
-      <!-- Settings Tab -->
-      <section id="tab-settings" class="tab-content hidden">
-        <h2>게임 설정</h2>
-        <div class="setting-row">
-          <label for="happy-ending-score">해피엔딩 트리거 점수</label>
-          <input type="number" id="happy-ending-score" step="50" min="0">
-          <button id="save-settings-btn">저장</button>
-        </div>
-        <p id="settings-status" class="hidden"></p>
-      </section>
-    </div>
-  </div>
-
-  <script src="js/admin.js"></script>
-</body>
+    <script src="js/admin.js"></script>
+  </body>
 </html>
