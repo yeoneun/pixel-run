@@ -80,7 +80,8 @@ class Game {
       });
 
     // 서버에서 게임 설정 로드
-    fetch("/settings")
+    const apiUrl = window.__DINO_API_URL__ || '';
+    fetch(`${apiUrl}/settings`)
       .then((res) => res.json())
       .then((settings) => {
         if (settings.happy_ending_score) {
