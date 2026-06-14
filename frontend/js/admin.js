@@ -136,13 +136,6 @@ const SPRITE_SECTIONS = [
       { key: 'obstacle-fly-2', label: '날개 장애물 2', size: '47×58' },
     ]
   },
-  {
-    id: 'ground',
-    title: '바닥 (Ground)',
-    sprites: [
-      { key: 'ground', label: '바닥', size: '955×10' },
-    ]
-  },
 ];
 
 // Preview sprite layout: key → { x, y, w, h } in game coordinates (600×270)
@@ -153,7 +146,6 @@ const PREVIEW_LAYOUT = {
   'obstacle-2-1':      { x: 220, w: 60, h: 21 },
   'obstacle-3-1':      { x: 310, w: 52, h: 38 },
   'obstacle-fly-1':    { x: 420, w: 47, h: 58, flying: true },
-  'ground':            { x: 0,   w: 600, h: 10, isGround: true },
 };
 
 const pendingChanges = new Map(); // key → { action: 'upload'|'delete', file: File|null, objectUrl: string|null }
@@ -355,15 +347,13 @@ function drawPreview() {
     }
 
     let y;
-    if (layout.isGround) {
-      y = groundY;
-    } else if (layout.flying) {
+    if (layout.flying) {
       y = groundY - layout.h - 60;
     } else {
       y = groundY - layout.h;
     }
 
-    drawQueue.push({ imgSrc, x: layout.x, y, w: layout.w, h: layout.h, key, isGround: layout.isGround });
+    drawQueue.push({ imgSrc, x: layout.x, y, w: layout.w, h: layout.h, key });
   }
 
   // Load all images first, then draw everything at once
@@ -430,18 +420,7 @@ function renderPreviewCanvas(ctx, W, H, groundY, drawQueue, imageResults) {
   drawQueue.forEach(item => {
     const img = imageResults.get(item.key);
     if (img) {
-      if (item.isGround) {
-        const pattern = ctx.createPattern(img, 'repeat-x');
-        if (pattern) {
-          ctx.save();
-          ctx.translate(0, item.y);
-          ctx.fillStyle = pattern;
-          ctx.fillRect(0, 0, W, item.h);
-          ctx.restore();
-        }
-      } else {
-        ctx.drawImage(img, item.x, item.y, item.w, item.h);
-      }
+      ctx.drawImage(img, item.x, item.y, item.w, item.h);
     } else {
       // Placeholder for missing sprites
       ctx.fillStyle = '#ddd';
@@ -456,13 +435,11 @@ function renderPreviewCanvas(ctx, W, H, groundY, drawQueue, imageResults) {
     }
 
     // Size label
-    if (!item.isGround) {
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.font = '8px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${item.w}×${item.h}`, item.x + item.w / 2, item.y + item.h + 10);
-      ctx.textAlign = 'left';
-    }
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.font = '8px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${item.w}×${item.h}`, item.x + item.w / 2, item.y + item.h + 10);
+    ctx.textAlign = 'left';
   });
 
   // Title
