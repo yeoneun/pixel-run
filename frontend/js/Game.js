@@ -97,7 +97,8 @@ class Game {
       });
 
     // 서버에서 게임 설정 로드
-    const apiUrl = window.__DINO_API_URL__ || '';
+    // env.js가 __DINO_API_URL__을 설정한다. fallback은 SpriteLoader/admin과 동일하게 로컬 백엔드.
+    const apiUrl = window.__DINO_API_URL__ || 'http://localhost:3001';
     fetch(`${apiUrl}/settings`)
       .then((res) => res.json())
       .then((settings) => {
@@ -326,7 +327,7 @@ class Game {
 
       case State.HAPPYENDING:
         this.dino.update();
-        this.happyEnding.update(this.obstacles);
+        this.happyEnding.update();
         // 기존 장애물은 계속 이동 (화면 밖으로 빠져나감)
         for (const obs of this.obstacles) {
           obs.speed = this.speed;

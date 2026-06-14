@@ -488,13 +488,6 @@ async function saveSettings() {
   setTimeout(() => status.classList.add('hidden'), 3000);
 }
 
-// --- Utility ---
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
   if (getToken()) {

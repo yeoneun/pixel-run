@@ -8,7 +8,6 @@ const restartIcon = new Image();
 restartIcon.src = "assets/icons/restart.svg";
 
 const Phase = {
-  CLEAR_OBSTACLES: "clear_obstacles", // 장애물 등장 중단, 기존 장애물 빠져나감
   GIRLFRIEND_ENTER: "girlfriend_enter", // 여친 쥐 오른쪽에서 등장
   DINO_RUN: "dino_run", // 주인공이 오른쪽으로 이동
   MEET: "meet", // 만남 → 하트 스프라이트
@@ -45,21 +44,14 @@ export class HappyEnding {
     this.onComplete = null;
   }
 
-  update(obstacles) {
+  // Game.js가 기존 장애물을 모두 내보낸 뒤(obstacles.length === 0) start()를 호출하므로
+  // 여기서는 여친 등장부터 시작한다.
+  update() {
     if (this.phase === Phase.DONE) return;
 
     this.girlfriend?.update();
 
     switch (this.phase) {
-      case Phase.CLEAR_OBSTACLES:
-        // 기존 장애물이 화면 밖으로 빠져나가기를 기다림
-        this.timer++;
-        if (!obstacles || obstacles.length === 0 || this.timer > 120) {
-          this.phase = Phase.GIRLFRIEND_ENTER;
-          this.girlfriend.x = viewport.width + 10;
-        }
-        break;
-
       case Phase.GIRLFRIEND_ENTER:
         // 여친 쥐가 오른쪽에서 들어옴
         this.girlfriend.x -= GF_ENTER_SPEED;
@@ -116,19 +108,11 @@ export class HappyEnding {
     return this.phase === Phase.SHOW_TEXT;
   }
 
-  isActive() {
-    return this.phase !== Phase.DONE;
-  }
-
-  shouldStopSpawning() {
-    return this.phase !== Phase.DONE;
-  }
-
   draw(ctx, colors) {
     if (this.phase === Phase.DONE) return;
 
     // 여친 쥐
-    if (this.girlfriend && this.phase !== Phase.CLEAR_OBSTACLES) {
+    if (this.girlfriend) {
       this.girlfriend.draw(ctx, colors.fg);
     }
 
