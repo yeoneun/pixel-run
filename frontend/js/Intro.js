@@ -7,7 +7,7 @@ const TITLE_FONT_SIZE = 28;
 const PROMPT_TEXT = "PRESS SPACE TO START";
 const SUB_PROMPT_TEXT = "or tap the screen";
 
-const TITLE_GRAVITY = 0.15;
+const TITLE_GRAVITY = 0.25;
 const DINO_RUN_SPEED = 4;
 const DINO_START_X = -50;
 const DINO_TARGET_X = 25;

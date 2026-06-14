@@ -11,7 +11,7 @@ const Phase = {
 
 const FREEZE_DURATION = 20;
 const LAUNCH_SPEED = -4;   // 초기 상승 속도
-const GRAVITY = 0.15;       // 중력 가속도
+const GRAVITY = 0.25;       // 중력 가속도
 
 export class DeathAnimation {
   constructor() {
