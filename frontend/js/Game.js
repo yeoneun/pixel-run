@@ -21,6 +21,22 @@ import { HappyEnding } from "./HappyEnding.js";
 const restartIcon = new Image();
 restartIcon.src = "assets/icons/restart.svg";
 
+// SVG 아이콘을 지정 색상으로 틴팅한 결과를 그려주는 헬퍼.
+// (오프스크린 캔버스에 source-in 합성으로 색을 입힌다)
+const restartIconCanvas = document.createElement("canvas");
+const restartIconCtx = restartIconCanvas.getContext("2d");
+function drawTintedRestartIcon(ctx, color, x, y, w, h) {
+  restartIconCanvas.width = w;
+  restartIconCanvas.height = h;
+  restartIconCtx.clearRect(0, 0, w, h);
+  restartIconCtx.drawImage(restartIcon, 0, 0, w, h);
+  restartIconCtx.globalCompositeOperation = "source-in";
+  restartIconCtx.fillStyle = color;
+  restartIconCtx.fillRect(0, 0, w, h);
+  restartIconCtx.globalCompositeOperation = "source-over";
+  ctx.drawImage(restartIconCanvas, x, y, w, h);
+}
+
 const State = {
   LOADING: "loading",
   INTRO: "intro",
@@ -533,12 +549,13 @@ class Game {
       ctx.textAlign = "center";
       ctx.fillText("Game Over", viewport.width / 2, viewport.height / 2 - 15);
 
-      // Restart icon
+      // Restart icon (Game Over 텍스트와 동일하게 colors.fg로 틴팅)
       if (restartIcon.complete && restartIcon.naturalWidth > 0) {
         const iconW = 26;
         const iconH = 28;
-        ctx.drawImage(
-          restartIcon,
+        drawTintedRestartIcon(
+          ctx,
+          colors.fg,
           viewport.width / 2 - iconW / 2,
           viewport.height / 2 + 2,
           iconW,
