@@ -1,4 +1,5 @@
 import { viewport } from "./config.js";
+import { fitFontSize } from "./utils.js";
 import { Girlfriend } from "./Girlfriend.js";
 
 const TITLE_FONT = "'Press Start 2P', monospace";
@@ -133,8 +134,15 @@ export class HappyEnding {
 
     // "Love wins all" 텍스트
     if (this.showText) {
+      const textSize = fitFontSize(
+        ctx,
+        "Love wins all",
+        viewport.width * 0.85,
+        24,
+        (s) => `${s}px ${TITLE_FONT}`,
+      );
       ctx.fillStyle = colors.fg;
-      ctx.font = `24px ${TITLE_FONT}`;
+      ctx.font = `${textSize}px ${TITLE_FONT}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("Love wins all", viewport.width / 2, viewport.height / 2 - 30);

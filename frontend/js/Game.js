@@ -1,12 +1,13 @@
 import {
   viewport,
   REFERENCE_HEIGHT,
+  REFERENCE_WIDTH,
   INITIAL_SPEED,
   MAX_SPEED,
   SPEED_INCREMENT,
   MIN_OBSTACLE_GAP,
 } from "./config.js";
-import { checkCollision } from "./utils.js";
+import { checkCollision, fitFontSize } from "./utils.js";
 import { spriteLoader } from "./SpriteLoader.js";
 import { Dino } from "./Dino.js";
 import { Obstacle } from "./Obstacle.js";
@@ -207,9 +208,16 @@ class Game {
   resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    viewport.scale = window.innerHeight / REFERENCE_HEIGHT;
+    // contain: 기준 영역(REFERENCE_WIDTH × REFERENCE_HEIGHT)이 항상 모두 보이도록
+    // 가로/세로 중 더 빡빡한 쪽에 맞춰 스케일한다. 남는 쪽은 논리 영역이 더 넓어진다.
+    // - 가로로 긴 화면: 높이에 맞춰짐(기존과 동일, 너비가 넓어짐)
+    // - 세로로 긴 화면: 너비에 맞춰짐(과확대 방지, 위쪽 하늘이 넓어짐)
+    viewport.scale = Math.min(
+      canvas.width / REFERENCE_WIDTH,
+      canvas.height / REFERENCE_HEIGHT,
+    );
     viewport.width = canvas.width / viewport.scale;
-    viewport.height = REFERENCE_HEIGHT;
+    viewport.height = canvas.height / viewport.scale;
   }
 
   startIntroAnimation() {
@@ -283,6 +291,8 @@ class Game {
 
       case State.INTRO:
         this.intro.update();
+        // 화면 크기에 따라 groundY가 바뀌므로 대기 중인 dino를 지면에 고정한다.
+        this.dino.y = viewport.groundY;
         break;
 
       case State.STARTING:
@@ -544,8 +554,15 @@ class Game {
       this.deathAnimation.draw(ctx);
     } else {
       // 애니메이션 완료 → Game Over 텍스트 + ↻ 아이콘
+      const goSize = fitFontSize(
+        ctx,
+        "Game Over",
+        viewport.width * 0.85,
+        24,
+        (s) => `${s}px 'Press Start 2P', monospace`,
+      );
       ctx.fillStyle = colors.fg;
-      ctx.font = "24px 'Press Start 2P', monospace";
+      ctx.font = `${goSize}px 'Press Start 2P', monospace`;
       ctx.textAlign = "center";
       ctx.fillText("Game Over", viewport.width / 2, viewport.height / 2 - 15);
 

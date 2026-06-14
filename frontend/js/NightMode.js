@@ -1,18 +1,24 @@
-import { viewport, NIGHT_CYCLE_SCORE, NIGHT_TRANSITION_FRAMES } from './config.js';
+import { viewport, REFERENCE_HEIGHT, NIGHT_CYCLE_SCORE, NIGHT_TRANSITION_FRAMES } from './config.js';
 import { lerpColor } from './utils.js';
 import { spriteLoader } from './SpriteLoader.js';
+
+// 세로로 긴 화면에서 늘어난 하늘 높이만큼 별을 더 넓게 흩뿌린다.
+// 기준 높이(REFERENCE_HEIGHT) 화면에서는 기존과 동일한 10~50 범위를 유지.
+function starY() {
+  const extraSky = Math.max(0, viewport.groundY - (REFERENCE_HEIGHT - 30));
+  return 10 + Math.random() * (40 + extraSky * 0.4);
+}
 
 export class NightMode {
   constructor() {
     this.active = false;
     this.opacity = 0;
-    this.moonX = viewport.width - 60;
     this.moonY = 20;
     this.stars = [];
     for (let i = 0; i < 5; i++) {
       this.stars.push({
         x: 50 + Math.random() * (viewport.width - 100),
-        y: 10 + Math.random() * 40,
+        y: starY(),
       });
     }
     this.phase = 0;
@@ -27,7 +33,7 @@ export class NightMode {
       this.phase = (this.phase + 1) % 6;
       for (let i = 0; i < this.stars.length; i++) {
         this.stars[i].x = 50 + Math.random() * (viewport.width - 100);
-        this.stars[i].y = 10 + Math.random() * 40;
+        this.stars[i].y = starY();
       }
     } else if (!shouldBeNight && this.active) {
       this.active = false;
@@ -54,8 +60,8 @@ export class NightMode {
     ctx.globalAlpha = this.opacity;
     ctx.fillStyle = color;
 
-    // Moon — crescent arc
-    const mx = this.moonX;
+    // Moon — crescent arc (현재 viewport 너비 기준으로 우상단 고정)
+    const mx = viewport.width - 60;
     const my = this.moonY;
     ctx.beginPath();
     ctx.arc(mx + 7, my + 7, 7, 0, Math.PI * 2);
