@@ -1,4 +1,5 @@
 import { viewport } from "./config.js";
+import { fitFontSize } from "./utils.js";
 
 const TITLE_FONT = "'Press Start 2P', monospace";
 const TITLE_TEXT = "Run\nDude\nRun";
@@ -6,7 +7,7 @@ const TITLE_FONT_SIZE = 28;
 const PROMPT_TEXT = "PRESS SPACE TO START";
 const SUB_PROMPT_TEXT = "or tap the screen";
 
-const TITLE_GRAVITY = 0.15;
+const TITLE_GRAVITY = 0.25;
 const DINO_RUN_SPEED = 4;
 const DINO_START_X = -50;
 const DINO_TARGET_X = 25;
@@ -78,26 +79,44 @@ export class Intro {
   }
 
   draw(ctx, colors) {
+    const cx = viewport.width / 2;
+    // 타이틀은 항상 한 줄로 표시하고, 좁은 화면에서는 폰트 크기를 줄여 맞춘다.
+    const titleText = TITLE_TEXT.split("\n").join(" ");
+    const titleSize = fitFontSize(
+      ctx,
+      titleText,
+      viewport.width * 0.9,
+      TITLE_FONT_SIZE,
+      (s) => `bold ${s}px ${TITLE_FONT}`,
+    );
+
     // Title
     if (!this.titleFallen) {
       ctx.fillStyle = colors.fg;
-      ctx.font = `bold ${TITLE_FONT_SIZE}px ${TITLE_FONT}`;
+      ctx.font = `bold ${titleSize}px ${TITLE_FONT}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(TITLE_TEXT, viewport.width / 2, this.titleY);
+      ctx.fillText(titleText, cx, this.titleY);
     }
 
-    // Prompt text (blink effect)
+    // Prompt text (blink effect) — 타이틀 아래에 배치
     if (this.showPrompt && !this.titleFalling) {
       const visible = Math.floor(this.promptBlink / BLINK_INTERVAL) % 2 === 0;
       if (visible) {
+        const promptSize = fitFontSize(
+          ctx,
+          PROMPT_TEXT,
+          viewport.width * 0.9,
+          12,
+          (s) => `${s}px ${TITLE_FONT}`,
+        );
         ctx.fillStyle = colors.fg;
-        ctx.font = "12px 'Press Start 2P', monospace";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(PROMPT_TEXT, viewport.width / 2, this.titleY + 44);
-        ctx.font = "12px 'Press Start 2P', monospace";
-        ctx.fillText(SUB_PROMPT_TEXT, viewport.width / 2, this.titleY + 62);
+        const promptY = this.titleY + titleSize * 1.2 + promptSize;
+        ctx.font = `${promptSize}px ${TITLE_FONT}`;
+        ctx.fillText(PROMPT_TEXT, cx, promptY);
+        ctx.fillText(SUB_PROMPT_TEXT, cx, promptY + promptSize + 8);
       }
     }
   }

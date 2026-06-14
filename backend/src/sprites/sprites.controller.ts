@@ -29,13 +29,7 @@ export class SpritesController {
     if (!file) {
       throw new NotFoundException("No image file provided");
     }
-    return this.spritesService.upload(
-      key,
-      file.buffer,
-      file.mimetype,
-      undefined,
-      undefined,
-    );
+    return this.spritesService.upload(key, file.buffer, file.mimetype);
   }
 
   @UseGuards(AuthGuard)

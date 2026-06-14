@@ -7,33 +7,24 @@ const ALLOWED_MIME_TYPES = ['image/webp', 'image/png', 'image/svg+xml'];
 export class SpritesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async upload(
-    key: string,
-    imageData: Buffer | Uint8Array,
-    mimeType: string,
-    width?: number,
-    height?: number,
-  ) {
+  async upload(key: string, imageData: Buffer | Uint8Array, mimeType: string) {
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       throw new BadRequestException(
         `Unsupported format: ${mimeType}. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`,
       );
     }
 
+    // width/height 컬럼은 픽셀 크기 검증 기능을 위해 예약돼 있으나 현재 미구현(항상 null).
     return this.prisma.sprite.upsert({
       where: { key },
       create: {
         key,
         imageData: new Uint8Array(imageData),
         mimeType,
-        width: width ?? null,
-        height: height ?? null,
       },
       update: {
         imageData: new Uint8Array(imageData),
         mimeType,
-        width: width ?? null,
-        height: height ?? null,
         updatedAt: new Date(),
       },
       select: {

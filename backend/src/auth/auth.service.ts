@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AuthService {
+  // 토큰은 인메모리 보관 → 서버 재시작 시 전부 무효화된다. 만료/회전(rotation)은 미구현.
   private tokens = new Set<string>();
 
   login(password: string): string {
@@ -17,9 +18,5 @@ export class AuthService {
 
   validateToken(token: string): boolean {
     return this.tokens.has(token);
-  }
-
-  logout(token: string): void {
-    this.tokens.delete(token);
   }
 }

@@ -17,6 +17,16 @@ export function drawPlaceholder(ctx, x, y, w, h, label) {
   ctx.restore();
 }
 
+// text가 maxWidth 안에 들어가도록 baseSize에서 줄인 폰트 크기를 반환한다.
+// makeFont(size) → CSS font 문자열(예: s => `bold ${s}px '...'`).
+// 호출 후 ctx.font은 변경되므로 호출자가 다시 설정해야 한다.
+export function fitFontSize(ctx, text, maxWidth, baseSize, makeFont) {
+  ctx.font = makeFont(baseSize);
+  const w = ctx.measureText(text).width;
+  if (w <= maxWidth || w === 0) return baseSize;
+  return Math.max(6, Math.floor(baseSize * (maxWidth / w)));
+}
+
 export function lerpColor(a, b, t) {
   return [
     Math.round(a[0] + (b[0] - a[0]) * t),

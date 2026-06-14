@@ -1,12 +1,13 @@
 import {
   viewport,
   REFERENCE_HEIGHT,
+  REFERENCE_WIDTH,
   INITIAL_SPEED,
   MAX_SPEED,
   SPEED_INCREMENT,
   MIN_OBSTACLE_GAP,
 } from "./config.js";
-import { checkCollision } from "./utils.js";
+import { checkCollision, fitFontSize } from "./utils.js";
 import { spriteLoader } from "./SpriteLoader.js";
 import { Dino } from "./Dino.js";
 import { Obstacle } from "./Obstacle.js";
@@ -20,6 +21,22 @@ import { HappyEnding } from "./HappyEnding.js";
 
 const restartIcon = new Image();
 restartIcon.src = "assets/icons/restart.svg";
+
+// SVG 아이콘을 지정 색상으로 틴팅한 결과를 그려주는 헬퍼.
+// (오프스크린 캔버스에 source-in 합성으로 색을 입힌다)
+const restartIconCanvas = document.createElement("canvas");
+const restartIconCtx = restartIconCanvas.getContext("2d");
+function drawTintedRestartIcon(ctx, color, x, y, w, h) {
+  restartIconCanvas.width = w;
+  restartIconCanvas.height = h;
+  restartIconCtx.clearRect(0, 0, w, h);
+  restartIconCtx.drawImage(restartIcon, 0, 0, w, h);
+  restartIconCtx.globalCompositeOperation = "source-in";
+  restartIconCtx.fillStyle = color;
+  restartIconCtx.fillRect(0, 0, w, h);
+  restartIconCtx.globalCompositeOperation = "source-over";
+  ctx.drawImage(restartIconCanvas, x, y, w, h);
+}
 
 const State = {
   LOADING: "loading",
@@ -80,7 +97,8 @@ class Game {
       });
 
     // 서버에서 게임 설정 로드
-    const apiUrl = window.__DINO_API_URL__ || '';
+    // env.js가 __DINO_API_URL__을 설정한다. fallback은 SpriteLoader/admin과 동일하게 로컬 백엔드.
+    const apiUrl = window.__DINO_API_URL__ || 'http://localhost:3001';
     fetch(`${apiUrl}/settings`)
       .then((res) => res.json())
       .then((settings) => {
@@ -191,9 +209,16 @@ class Game {
   resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    viewport.scale = window.innerHeight / REFERENCE_HEIGHT;
+    // contain: 기준 영역(REFERENCE_WIDTH × REFERENCE_HEIGHT)이 항상 모두 보이도록
+    // 가로/세로 중 더 빡빡한 쪽에 맞춰 스케일한다. 남는 쪽은 논리 영역이 더 넓어진다.
+    // - 가로로 긴 화면: 높이에 맞춰짐(기존과 동일, 너비가 넓어짐)
+    // - 세로로 긴 화면: 너비에 맞춰짐(과확대 방지, 위쪽 하늘이 넓어짐)
+    viewport.scale = Math.min(
+      canvas.width / REFERENCE_WIDTH,
+      canvas.height / REFERENCE_HEIGHT,
+    );
     viewport.width = canvas.width / viewport.scale;
-    viewport.height = REFERENCE_HEIGHT;
+    viewport.height = canvas.height / viewport.scale;
   }
 
   startIntroAnimation() {
@@ -267,6 +292,8 @@ class Game {
 
       case State.INTRO:
         this.intro.update();
+        // 화면 크기에 따라 groundY가 바뀌므로 대기 중인 dino를 지면에 고정한다.
+        this.dino.y = viewport.groundY;
         break;
 
       case State.STARTING:
@@ -300,7 +327,7 @@ class Game {
 
       case State.HAPPYENDING:
         this.dino.update();
-        this.happyEnding.update(this.obstacles);
+        this.happyEnding.update();
         // 기존 장애물은 계속 이동 (화면 밖으로 빠져나감)
         for (const obs of this.obstacles) {
           obs.speed = this.speed;
@@ -528,17 +555,25 @@ class Game {
       this.deathAnimation.draw(ctx);
     } else {
       // 애니메이션 완료 → Game Over 텍스트 + ↻ 아이콘
+      const goSize = fitFontSize(
+        ctx,
+        "Game Over",
+        viewport.width * 0.85,
+        24,
+        (s) => `${s}px 'Press Start 2P', monospace`,
+      );
       ctx.fillStyle = colors.fg;
-      ctx.font = "24px 'Press Start 2P', monospace";
+      ctx.font = `${goSize}px 'Press Start 2P', monospace`;
       ctx.textAlign = "center";
       ctx.fillText("Game Over", viewport.width / 2, viewport.height / 2 - 15);
 
-      // Restart icon
+      // Restart icon (Game Over 텍스트와 동일하게 colors.fg로 틴팅)
       if (restartIcon.complete && restartIcon.naturalWidth > 0) {
         const iconW = 26;
         const iconH = 28;
-        ctx.drawImage(
-          restartIcon,
+        drawTintedRestartIcon(
+          ctx,
+          colors.fg,
           viewport.width / 2 - iconW / 2,
           viewport.height / 2 + 2,
           iconW,
