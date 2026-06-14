@@ -51,8 +51,8 @@
   "flyingObstacles": [
     {
       "sprites": ["obstacle-fly-1.webp", "obstacle-fly-2.webp"],
-      "size": { "w": 47, "h": 58 },
-      "hitbox": { "x": 3, "y": 4, "w": 41, "h": 50 }
+      "size": { "w": 46, "h": 53 },
+      "hitbox": { "x": 3, "y": 4, "w": 40, "h": 45 }
     }
   ],
   "ground": {
